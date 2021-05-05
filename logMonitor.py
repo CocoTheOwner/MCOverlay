@@ -37,23 +37,27 @@ class logMonitor:
                 # Add one to linecounter
                 self.linenumber += 1
 
-                # Make sure line is useful (very lightweight)
-                if (not line.startswith("[")):
-                    continue
+                # Process the line
+                self.processLine(line)
 
-                # (somewhat heavier)
-                if (line.find("[Client thread/INFO]: [CHAT]") == -1):
-                    continue
+    def processLine(self, line):
+        # Make sure line is useful (very lightweight)
+        if (not line.startswith("[")):
+            return
 
-                # (quite heavy)
-                info = line.strip().split("[Client thread/INFO]: [CHAT]")[1].strip()
+        # (somewhat heavier)
+        if (line.find("[Client thread/INFO]: [CHAT]") == -1):
+            return
 
-                # (very light)
-                if (info == ""):
-                    continue
+        # (quite heavy)
+        info = line.strip().split("[Client thread/INFO]: [CHAT]")[1].strip()
 
-                # (quite heavy)
-                print("Line: " + info)
+        # (very light)
+        if (info == ""):
+            return
 
-                # (quite light)
-                self.queue.append(info)
+        # (quite heavy)
+        if (self.debug): print("Line: " + info)
+
+        # (quite light)
+        self.queue.append(info)
