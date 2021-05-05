@@ -8,8 +8,8 @@
 - [ ] Levelhead view
 
 ## Specific tasks
-- [ ] Read `latest.log`
-	- [ ] Detect changes, filter unimportant data
+- [x] Read `latest.log`
+	- [x] Detect changes, filter unimportant data
 - [ ] Interpret `latest.log`
 	- [ ] Lobby 1
 		- [HH:MM:SS] [Client thread/INFO]: [CHAT] [STARS?] NAME: CHAT
@@ -19,13 +19,14 @@
 		- [HH:MM:SS] [Client thread/INFO]: [CHAT] NAME has joined (X/Y)!
 			- `X` varies from 1 to `Y`
 			- `Y` is 8 (solo or 4v4), 12 (3s) 16 (2s or 4s)
-- [ ] Request UUID from Minecraft username API
-- [ ] Get API token from file
-- [ ] Use API token and UUID to retrieve player information from Hypixel API
+- [x] Request UUID from Minecraft username API
+- [x] Get API token from file
+- [x] Use API token and UUID to retrieve player information from Hypixel API
 - [ ] Teamcolors
 - [ ] Selectable statistics in table
 	- [ ] Index score
 	- [ ] Dynamic system showing all
+- [ ] GUI
 - [ ] Mistake "/who" detection and marking
 - [ ] Autowho
 	- [ ] Don't use when first player in lobby
