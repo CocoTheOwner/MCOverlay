@@ -1,5 +1,5 @@
 # MCOverlay
-*A blazing fast overlay to never get sniped again!
+*A blazing fast overlay to never get sniped again!*
 
 # Task Checklist
 
