@@ -33,7 +33,6 @@ class Config:
             json.dump(self.config, f, ensure_ascii=False, indent=4)
 
     def ensureFileExistNotEmpty(self):
-        print(os.path.getsize(self.configFile))
         if (not os.path.isfile(self.configFile)):
             print("Making new config file at: " + self.configFile)
             with open(self.configFile, "w") as f:
