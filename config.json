@@ -1,8 +1,7 @@
 {
     "ownUsers": [
-        "cocodef9",
-        "Prems",
-        "ReadyPlayerFour"
+        "cocodef9"
     ],
-    "token": "5b80031d-a3e9-48dc-84bc-fe3dc5c6d6c1"
+    "token": "token",
+    "logFolder": "C:\\Users\\sjoer\\Appdata\\Roaming\\Minecraft 1.8.9\\logs\\latest.log"
 }

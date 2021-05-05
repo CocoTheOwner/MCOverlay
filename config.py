@@ -8,8 +8,9 @@ class Config:
     def __init__(self, path, config):
         self.defaultConfig = config
         self.configFile = path
-        self.makeFileExistNotEmpty()
+        self.ensureFileExistNotEmpty()
         self.load()
+        self.ensureFileValid()
 
     def get(self, item):
         return self.config[item]
@@ -31,7 +32,7 @@ class Config:
         with open(self.configFile, 'w') as f:
             json.dump(self.config, f, ensure_ascii=False, indent=4)
 
-    def makeFileExistNotEmpty(self):
+    def ensureFileExistNotEmpty(self):
         print(os.path.getsize(self.configFile))
         if (not os.path.isfile(self.configFile)):
             print("Making new config file at: " + self.configFile)
@@ -41,4 +42,14 @@ class Config:
             print("Filling existing but empty config file at: " + self.configFile)
             with open(self.configFile, "w") as f:
                 json.dump(self.defaultConfig, f, ensure_ascii=False, indent=4)
-            
+    
+    def ensureFileValid(self):
+        for key in self.defaultConfig:
+            if (not key in self.config):
+                print("Key not found: " + key + " in keys: " + str(self.config))
+                print("Invalid configuration file, does not contain all required keys! Resetting")
+                with open(self.configFile.replace(".txt", "-invalid.txt"), "w") as f:
+                    json.dump(self.config, f, ensure_ascii=False, indent=4)
+                with open(self.configFile, "w") as f:
+                    json.dump(self.defaultConfig, f, ensure_ascii=False, indent=4)
+                break
