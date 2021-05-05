@@ -19,7 +19,7 @@ config = Config('./config.json', defaultConfig)
 config.save()
 
 # Create a configuration file logger
-logger = logMonitor(config.get("logFolder"))
+logger = logMonitor(config.get("logFolder"), True)
 
 # Create an API object
 api = API()
