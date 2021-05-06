@@ -43,6 +43,7 @@
 	- [ ] Player already in list (do not request API again)
 	- [ ] Rank detection
 	- [ ] Party detection
+	- [ ] Guild detection
 	- [ ] Staff detection
 	- [ ] Party list detection
 	- [ ] Who-command detection
