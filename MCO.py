@@ -14,6 +14,8 @@ defaultConfig = {
 
 # Load configuration file (if empty, loads defaultConfig)
 config = Config('./config.json', defaultConfig)
+uuids = Config('./uuids.json', {})
+players = Config('./players.json', {})
 
 # Save the configuration file
 config.save()
@@ -24,12 +26,20 @@ logger = logMonitor(config.get("logFolder"), True)
 # Create an API object
 api = API()
 
+# Reset log
+open('./log.txt', 'w').close()
+
 def start():
     for user in config.get("ownUsers"):
         print("User: {} has UUID: {}".format(user, api.minecraft(user)))
     while(True):
         logger.tick()
-        exit
+        if (logger.hasQueue):
+            for element in logger.getPlayers():
+                uuid = api.minecraft(element)
+                print("Player {} has UUID {}".format(element, uuid))
+                uuids.set(element, uuid)
+                players.set(uuid, element)
         time.sleep(0.1)
 
 
