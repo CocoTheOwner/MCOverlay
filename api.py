@@ -1,4 +1,5 @@
 import json
+from json.decoder import JSONDecodeError
 import requests
 class API:
     foundUUIDs = {}
@@ -20,6 +21,12 @@ class API:
     def minecraft(self, username):
         if (username in self.foundPlayers):
             return self.foundPlayers[username]
-        uuid = json.loads(requests.get("https://api.mojang.com/users/profiles/minecraft/" + username).content)["id"]
+        print("Getting UUID of {}".format(username))
+        request = ""
+        try:
+            request = requests.get("https://api.mojang.com/users/profiles/minecraft/" + username).content
+            uuid = json.loads(request)["id"]
+        except JSONDecodeError:
+            print("Failed to load json from {}.\n{}".format("https://api.mojang.com/users/profiles/minecraft/" + username, str(request)))
         self.foundPlayers[username] = uuid
         return uuid
