@@ -66,18 +66,18 @@ class logMonitor:
         # (quite heavy) Usefullness check
         if (not logMonitor.lineIsUseful(info)):
             return
-            
+
         # (quite light) Lobby check
         if (line.count("You are currently connected to server ") > 0):
             line = line.split("You are currently connected to server ", 1)[1].split(' ')[0]
             if (line != self.lobbyName):
-                print("Lobby: New: {}, Previous: {}".format(line, self.lobbyName))
+                logMonitor.print("Lobby:[{}] -> [{}]".format(self.lobbyName, line)) if self.lobbyName != None else logMonitor.print("Lobby:[{}]".format(line))
                 self.lobbyName = line
             return
 
         # (quite light) Game join check
         if (line.count("Taking you to") > 0):
-            print("Game: " + line.split(" ")[-1].removesuffix("!"))
+            logMonitor.print("Game: " + line.split(" ")[-1].removesuffix("!"))
             return
         
         # (medium heavy) Process the line
@@ -90,14 +90,14 @@ class logMonitor:
 
             # >>> [RANK] username joined the lobby! <<<
 
-            line = line.split("joined the lobby!")[0].strip().split(" ")
+            line = line.removeprefix(">>>").split("joined the lobby!")[0].strip().split(" ")
             # [">>>", "[RANK]", "username"] 
 
-            rank = logMonitor.getRank(line[-2])
+            rank = logMonitor.getRank(line[0])
 
-            self.addPlayer(line[-1], rank)
+            self.addPlayer(line[-1], rank, -1)
 
-            print("Join: [" + rank + "] " + line[-1] if rank != "NON" else "Join: " + line[-1])
+            logMonitor.print("Join: [" + rank + "] " + line[-1] if rank != "NON" else "Join: " + line[-1])
                                                                         
         elif (line.count("has joined") > 0):
 
@@ -112,7 +112,7 @@ class logMonitor:
             # Save the amount of players in the lobby
             self.lobbyCount = int(line[-1].replace("(","").replace(")!","").split("/")[0])
 
-            print("Join: " + line[0])
+            logMonitor.print("JoinR: " + line[0])
 
         elif (line.count("has quit!") > 0):
             
@@ -124,44 +124,62 @@ class logMonitor:
             name = line.split(" ")[0]
             self.removePlayer(name)
 
-            print("Quit: " + name)
+            logMonitor.print("Quit: " + name)
 
         elif (line.count("game starts in ") > 0 and line.count(" seconds!") > 0):
             
-            print("Time: " + line.split(" ")[-2] + "s")
+            logMonitor.print("Time: " + line.split(" ")[-2] + "s")
 
-        elif (line.count(" ") > 0):
+        elif (line.startswith("[") and line.split(" ")[0].endswith("?]") and (line.split(" ")[1].endswith(":") or line.split(" ")[2].endswith(":")) and line.count(" ") > 1):
             # [STAR?] username: message may contain spaces
 
             # Prevent single-word lines, which are never a message
 
             split = line.split(" ")
             # ["[STAR?]", "username:", "message", "may", "contain", "spaces"]
+            # ["[STAR?]", "[RANK]", "username:", "message", "may", "contain", "spaces"]
 
-            message = line.removeprefix(split[0] + " " + split[1] + " ")
+            stars = split[0].removeprefix("[").removesuffix("?]")
+            rank = logMonitor.getRank(split[1])
+            user = ""
+            if (rank == "NON"):
+                user = split[1]
+                message = line.removeprefix(split[0] + " " + split[1])
+            else:
+                user = split[2]
+                message = line.removeprefix(split[0] + " " + split[1] + " " + split[2])
+
             message = message.replace("?", "")+"?" if message.endswith("?") else message.replace("?", "")
             while (message.count("  ") > 0):
-                messge = message.replace("  ", " ")
+                message = message.replace("  ", " ")
                 
 
-            self.addPlayer(split[1].removesuffix(":").strip(), split[0].removeprefix("[").removesuffix("?]"))
+            self.addPlayer(user, rank, stars)
 
-            print("Chat: {} {}".format(split[1], message))
+            logMonitor.print("Chat: [{}] {} {}".format(stars, split[1], message))
         else:
-            print("Line: " + line)
+            logMonitor.print("Line: " + line)
 
     
     def getRank(line: str):
-        if (line.__contains__(" [VIP] ")):
+        if (line.__contains__("[VIP]")):
             return "VIP"
-        if (line.__contains__(" [VIP+] ")):
+        if (line.__contains__("[VIP+]")):
             return "VIP+"
-        if (line.__contains__(" [MVP] ")):
+        if (line.__contains__("[MVP]")):
             return "MVP"
-        if (line.__contains__(" [MVP+] ")):
+        if (line.__contains__("[MVP+]")):
             return "MVP+"
-        if (line.__contains__(" [MVP++] ")):
+        if (line.__contains__("[MVP++]")):
             return "MVP++"
+        if (line.__contains__("[Helper]")):
+            return "Helper"
+        if (line.__contains__("[YOUTUBE]")):
+            return "Admin"
+        if (line.__contains__("[Admin]")):
+            return "Admin"
+        if (line.__contains__("[Owner]")):
+            return "Owner"
         return "NON"
             
     """
@@ -182,17 +200,41 @@ class logMonitor:
             return False
         if (line.count("Staff have banned an additional") > 0 and line.count("in the last") > 0):
             return False
-        if (line.strip() == "[WATCHDOG ANNOUNCEMENT]"):
+        line = line.strip()
+        if (line == "[WATCHDOG ANNOUNCEMENT]"):
             return False
-        if (line.strip() == "Blacklisted modifications are a bannable offense!"):
+        if (line == "Blacklisted modifications are a bannable offense!"):
+            return False
+        if (line.count("[Mystery Box]") > 0 and line.count("found") > 0):
+            return False
+        if (line == "A player has been removed from your lobby."):
+            return False
+        if (line == "Use /report to continue helping out the server!"):
+            return False
+        if (line == "Unknown command. Type \"help\" for help."):
             return False
         return True
 
-    def addPlayer(self, name, value):
-        self.playerQueue[name] = value
+    def addPlayer(self, name, rank, stars):
+        self.playerQueue[name] = {rank, stars}
         self.hasQueue = len(self.playerQueue) > 0
         
     def removePlayer(self, name):
-        if (name in self.playerQueue):
-            del self.playerQueue[name]
+        for i,element in enumerate(self.playerQueue):
+            if (element[0] == name):
+                del self.playerQueue[i]
             self.hasQueue = len(self.playerQueue) > 0
+
+    def getPlayers(self):
+        q = self.playerQueue.copy()
+        self.playerQueue = {}
+        self.hasQueue = False
+        return q
+
+    def print(string):
+        
+        # (quite heavy) Add line to log
+        with open("./log.txt", "a") as f:
+            f.write(string + "\n")
+
+        print(string)
