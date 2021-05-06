@@ -2,6 +2,7 @@ from api import API
 from logMonitor import logMonitor
 from config import Config
 import time
+from multiprocessing import Process, Lock
 
 # Default configuration
 defaultConfig = {
@@ -23,21 +24,35 @@ config.save()
 logger = logMonitor(config.get("logFolder"), True)
 
 # Create an API object
-api = API(players.config)
+api = API(players.config, config.get("token"))
 
 # Reset log
 open('./config/log.txt', 'w').close()
+
 
 def start():
     while(True):
         logger.tick()
         if (logger.hasQueue):
-            for element in logger.getPlayers():
-                uuid = api.minecraft(element)
-                players.set(element, uuid)
-                players.set(uuid, element)
+            for player in logger.getPlayers():
+                uuid = api.minecraft(player)
+                players.set(player, uuid)
+                stats = api.hypixel(uuid)
+                players.set(uuid, stats)
+
         time.sleep(0.1)
 
 
-if (__name__ == "__main__"):
+
+def f(l, i):
+    l.acquire()
+    try:
+        print('hello world', i)
+    finally:
+        l.release()
+
+if __name__ == '__main__':
+    #lock = Lock()
     start()
+    #for num in range(10):
+    #    Process(target=f, args=(lock, num)).start()

@@ -3,18 +3,20 @@ from json.decoder import JSONDecodeError
 import requests
 class API:
     players = {}
+    token = ""
     
     # TODO: Queue party and self for statistics refresh when requested
 
-    def __init__(self, players: dict,):
+    def __init__(self, players: dict, token: str):
         self.players = players
+        self.token = token
 
-    def hypixel(self, token, uuid):
-        if (uuid in self.players and self.players[uuid] is dict):
-            return self.players[uuid]
+    def hypixel(self, uuid):
+        print("Downloading stats of {} ({})".format(uuid, self.players[uuid]))
         request = ""
         try:
-            request = requests.get("https://api.hypixel.net/player?key={}&uuid={}".format(token, uuid)).content
+            request = requests.get("https://api.hypixel.net/status").content
+            #request = requests.get("https://api.hypixel.net/player?key={}&uuid={}".format(self.token, uuid)).content
             self.players[uuid] = json.loads(request)
         except Exception:
             print("Failed to retrieve or load json for {} ({}), got: {}".format(uuid, self.players[uuid], request))

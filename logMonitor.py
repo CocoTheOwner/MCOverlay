@@ -165,7 +165,7 @@ class logMonitor:
 
             logMonitor.print("Chat: [{}] {}{} {}".format(stars, "[" + rank + "] " if rank != "NON" else "", user, message.strip()))
         else:
-            logMonitor.print("\n\n\n\nUNPROCESSED LINE!\nLine: " + line + "\n\n\n\n")
+            logMonitor.print("\n\n\n\nUNPROCESSED LINE!\n" + line + "\n\n\n\n")
 
     
     def getRank(line: str):
@@ -198,6 +198,7 @@ class logMonitor:
         line = line.strip()
         if (line.count("You are AFK") > 0): return False
         if (line.count("Friend > ") > 0): return False
+        if (line.count("Guild > ") > 0): return False
         if (line.count("You tipped") > 0 and line.count("players!") > 0): return False
         if (line.count("found a") > 0 and line.count("Mystery Box!") > 0): return False
         if (line.count("Watchdog has banned") > 0 and line.count("players in the last") > 0): return False
