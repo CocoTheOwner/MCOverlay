@@ -74,10 +74,17 @@ class logMonitor:
                 logMonitor.print("Lobby:[{}] -> [{}]".format(self.lobbyName, line)) if self.lobbyName != None else logMonitor.print("Lobby:[{}]".format(line))
                 self.lobbyName = line
             return
+            
+        if (line.count("Sending you to") > 0):
+            line = line.split("Sending you to ", 1)[1].split(' ')[0]
+            if (line != self.lobbyName):
+                logMonitor.print("Lobby:[{}] -> [{}]".format(self.lobbyName, line)) if self.lobbyName != None else logMonitor.print("Lobby:[{}]".format(line))
+                self.lobbyName = line
+            return
 
         # (quite light) Game join check
         if (line.count("Taking you to") > 0):
-            logMonitor.print("Game: " + line.split(" ")[-1].removesuffix("!"))
+            logMonitor.print("Game: [" + line.split(" ")[-1].removesuffix("!") + "]")
             return
         
         # (medium heavy) Process the line
@@ -139,7 +146,7 @@ class logMonitor:
             # ["[STAR?]", "username:", "message", "may", "contain", "spaces"]
             # ["[STAR?]", "[RANK]", "username:", "message", "may", "contain", "spaces"]
 
-            stars = split[0].removeprefix("[").removesuffix("?]")
+            stars = split[0].removeprefix("[").removesuffix("?]").strip()
             rank = logMonitor.getRank(split[1])
             user = ""
             if (rank == "NON"):
@@ -149,16 +156,16 @@ class logMonitor:
                 user = split[2]
                 message = line.removeprefix(split[0]).removeprefix(" ").removeprefix(split[1]).removeprefix(" ").removeprefix(split[2])
 
-            message = message.replace("?", "")+"?" if message.endswith("?") else message.replace("?", "")
+            message = message.replace("?", "")+"?" if message.endswith("?") else message.replace("?", "").strip()
             while (message.count("  ") > 0):
                 message = message.replace("  ", " ")
                 
 
             self.addPlayer(user.replace(":",""), rank, stars)
 
-            logMonitor.print("Chat: [{}] {} {}".format(stars, split[1], message))
+            logMonitor.print("Chat: [{}] {} {}".format(stars, user, message.strip()))
         else:
-            logMonitor.print("Line: " + line)
+            logMonitor.print("\n\n\n\nUNPROCESSED LINE!\nLine: " + line + "\n\n\n\n")
 
     
     def getRank(line: str):
@@ -188,33 +195,21 @@ class logMonitor:
     Include as much information as possible to prevent accidental removing.
     """
     def lineIsUseful(line: str):
-        if (line.count("You are AFK") > 0):
-            return False
-        if (line.count("Friend > ") > 0):
-            return False
-        if (line.count("You tipped") > 0 and line.count("players!") > 0):
-            return False
-        if (line.count("found a") > 0 and line.count("Mystery Box!") > 0):
-            return False
-        if (line.count("Watchdog has banned") > 0 and line.count("players in the last") > 0):
-            return False
-        if (line.count("Staff have banned an additional") > 0 and line.count("in the last") > 0):
-            return False
         line = line.strip()
-        if (line == "[WATCHDOG ANNOUNCEMENT]"):
-            return False
-        if (line == "Blacklisted modifications are a bannable offense!"):
-            return False
-        if (line.count("[Mystery Box]") > 0 and line.count("found") > 0):
-            return False
-        if (line == "A player has been removed from your lobby."):
-            return False
-        if (line == "Use /report to continue helping out the server!"):
-            return False
-        if (line == "Unknown command. Type \"help\" for help."):
-            return False
-        if (line.startswith("Sending you to")):
-            return 
+        if (line.count("You are AFK") > 0): return False
+        if (line.count("Friend > ") > 0): return False
+        if (line.count("You tipped") > 0 and line.count("players!") > 0): return False
+        if (line.count("found a") > 0 and line.count("Mystery Box!") > 0): return False
+        if (line.count("Watchdog has banned") > 0 and line.count("players in the last") > 0): return False
+        if (line.count("Staff have banned an additional") > 0 and line.count("in the last") > 0): return False
+        if (line.count("Unknown command. Type \"help\" for help.") > 0): return False
+        if (line.count("[Mystery Box]") > 0 and line.count("found") > 0): return False
+        if (line == "[WATCHDOG ANNOUNCEMENT]"): return False
+        if (line == "Blacklisted modifications are a bannable offense!"): return False
+        if (line == "A player has been removed from your lobby."): return False
+        if (line == "Use /report to continue helping out the server!"): return False
+        if (line == "You were kicked while joining that server!"): return False
+        if (line == "This server is full! (Server closed)"): return False
         return True
 
     def addPlayer(self, name, rank, stars):
@@ -236,7 +231,7 @@ class logMonitor:
     def print(string):
         
         # (quite heavy) Add line to log
-        with open("./log.txt", "a") as f:
+        with open("./config/log.txt", "a") as f:
             f.write(string + "\n")
 
         print(string)

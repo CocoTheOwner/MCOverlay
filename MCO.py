@@ -29,14 +29,11 @@ api = API(players.config)
 open('./config/log.txt', 'w').close()
 
 def start():
-    for user in config.get("ownUsers"):
-        print("User: {} has UUID: {}".format(user, api.minecraft(user)))
     while(True):
         logger.tick()
         if (logger.hasQueue):
             for element in logger.getPlayers():
                 uuid = api.minecraft(element)
-                print("Player {} has UUID {}".format(element, uuid))
                 players.set(element, uuid)
                 players.set(uuid, element)
         time.sleep(0.1)
