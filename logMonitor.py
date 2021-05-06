@@ -163,7 +163,7 @@ class logMonitor:
 
             self.addPlayer(user.replace(":",""), rank, stars)
 
-            logMonitor.print("Chat: [{}] {} {}".format(stars, user, message.strip()))
+            logMonitor.print("Chat: [{}] {}{} {}".format(stars, "[" + rank + "] " if rank != "NON" else "", user, message.strip()))
         else:
             logMonitor.print("\n\n\n\nUNPROCESSED LINE!\nLine: " + line + "\n\n\n\n")
 
