@@ -14,7 +14,7 @@ defaultConfig = {
 
 # Load configuration file (if empty, loads defaultConfig)
 config = Config('./config.json', defaultConfig)
-uuids = Config('./uuids.json', {}).getAll
+uuids = Config('./uuids.json', {})
 players = Config('./players.json', {})
 
 # Save the configuration file
@@ -24,7 +24,7 @@ config.save()
 logger = logMonitor(config.get("logFolder"), True)
 
 # Create an API object
-api = API()
+api = API(players.config, uuids.config)
 
 # Reset log
 open('./log.txt', 'w').close()

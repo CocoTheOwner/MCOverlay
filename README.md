@@ -21,6 +21,7 @@
 			- `X` varies from 1 to `Y`
 			- `Y` is 8 (solo or 4v4), 12 (3s) 16 (2s or 4s)
 - [x] Request UUID from Minecraft username API
+	- [x] Save uuid->player and player->uuid tables between runs
 - [x] Get API token from file
 - [x] Use API token and UUID to retrieve player information from Hypixel API
 - [ ] Teamcolors

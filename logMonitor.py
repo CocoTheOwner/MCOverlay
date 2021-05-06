@@ -147,14 +147,14 @@ class logMonitor:
                 message = line.removeprefix(split[0] + " " + split[1])
             else:
                 user = split[2]
-                message = line.removeprefix(split[0] + " " + split[1] + " " + split[2])
+                message = line.removeprefix(split[0]).removeprefix(" ").removeprefix(split[1]).removeprefix(" ").removeprefix(split[2])
 
             message = message.replace("?", "")+"?" if message.endswith("?") else message.replace("?", "")
             while (message.count("  ") > 0):
                 message = message.replace("  ", " ")
                 
 
-            self.addPlayer(user, rank, stars)
+            self.addPlayer(user.replace(":",""), rank, stars)
 
             logMonitor.print("Chat: [{}] {} {}".format(stars, split[1], message))
         else:
@@ -213,6 +213,8 @@ class logMonitor:
             return False
         if (line == "Unknown command. Type \"help\" for help."):
             return False
+        if (line.startswith("Sending you to")):
+            return 
         return True
 
     def addPlayer(self, name, rank, stars):

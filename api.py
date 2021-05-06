@@ -7,9 +7,9 @@ class API:
     
     # TODO: Queue party and self for statistics refresh when requested
 
-    def __init__(self):
-        self.foundPlayers.setdefault(-1)
-        self.foundUUIDs.setdefault(-1)
+    def __init__(self, foundPlayers: dict, foundUUIDs: dict):
+        self.foundPlayers = foundPlayers
+        self.foundUUIDs = foundUUIDs
 
     def hypixel(self, token, uuid):
         if (uuid in self.foundUUIDs):
@@ -23,6 +23,7 @@ class API:
             return self.foundPlayers[username]
         print("Getting UUID of {}".format(username))
         request = ""
+        uuid = -1
         try:
             request = requests.get("https://api.mojang.com/users/profiles/minecraft/" + username).content
             uuid = json.loads(request)["id"]
