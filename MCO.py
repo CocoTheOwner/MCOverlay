@@ -29,6 +29,7 @@ def start():
         print("User: {} has UUID: {}".format(user, api.minecraft(user)))
     while(True):
         logger.tick()
+        exit
         time.sleep(0.1)
 
 
