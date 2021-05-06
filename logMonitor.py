@@ -1,3 +1,4 @@
+
 import os.path
 from types import prepare_class
 class logMonitor:
@@ -5,13 +6,13 @@ class logMonitor:
     mtime = 0
     linenumber = 0
     debug = False
-    queue = []
 
     def __init__(self, path, debug = False):
         self.path = path
         self.debug = debug
 
     def tick(self):
+        # Updates queue
         if (self.mtime != os.path.getmtime(self.path)):
             self.mtime = os.path.getmtime(self.path)
             self.readlog()
@@ -38,9 +39,9 @@ class logMonitor:
                 self.linenumber += 1
 
                 # Process the line
-                self.processLine(line)
+                self.cleanLine(line)
 
-    def processLine(self, line):
+    def cleanLine(self, line):
         # Make sure line is useful (very lightweight)
         if (not line.startswith("[")):
             return
@@ -60,4 +61,36 @@ class logMonitor:
         if (self.debug): print("Line: " + info)
 
         # (quite light)
-        self.queue.append(info)
+        self.process(info)
+
+    playerQueue = {}
+    # Process a line to retrieve available information
+    def process(self, line: str):
+        if (line.count("joined the lobby!") > 0):
+            self.playerQueue[line.split("joined the lobby!")[0].split(" ")[-1]] = self.getRank(line)
+
+        elif (line.count("has joined") > 0):
+            self.playerQueue[line.split(" ")[0]] = self.getRank(line)
+
+        else:
+            # Checking for lobby-sent chat
+            line = line.split(" ")[0].__contains__("[")
+            return
+
+    
+    def getRank(line: str):
+        if (line.__contains__(" [VIP] ")):
+            return "VIP"
+        if (line.__contains__(" [VIP+] ")):
+            return "VIP+"
+        if (line.__contains__(" [MVP] ")):
+            return "MVP"
+        if (line.__contains__(" [MVP+] ")):
+            return "MVP+"
+        if (line.__contains__(" [MVP++] ")):
+            return "MVP++"
+        return "NON"
+            
+    
+
+
