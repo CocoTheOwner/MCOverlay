@@ -17,6 +17,7 @@ class Config:
         
     def set(self, item, value):
         self.config[item] = value
+        self.save()
 
     def getAll(self):
         keys = []
