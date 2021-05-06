@@ -1,8 +1,8 @@
 import json
-from os import path
 import os
+from os import path
 class Config:
-    configFile = "./config.txt"
+    configFile = "./config/config.txt"
     defaultConfig = {}
     config = {}
     def __init__(self, path, config):
@@ -34,6 +34,8 @@ class Config:
             json.dump(self.config, f, ensure_ascii=False, indent=4)
 
     def ensureFileExistNotEmpty(self):
+        if (not path.exists(self.configFile.removesuffix(self.configFile.split("/")[-1]))):
+            os.makedirs(self.configFile.removesuffix(self.configFile.split("/")[-1]))
         if (not os.path.isfile(self.configFile)):
             print("Making new config file at: " + self.configFile)
             with open(self.configFile, "w") as f:
