@@ -14,7 +14,7 @@ defaultConfig = {
 
 # Load configuration file (if empty, loads defaultConfig)
 config = Config('./config.json', defaultConfig)
-uuids = Config('./uuids.json', {})
+uuids = Config('./uuids.json', {}).getAll
 players = Config('./players.json', {})
 
 # Save the configuration file
