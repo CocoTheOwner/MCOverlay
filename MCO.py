@@ -13,8 +13,8 @@ defaultConfig = {
 }
 
 # Load configuration file (if empty, loads defaultConfig)
-config = Config('./config.json', defaultConfig)
-players = Config('./players.json', {})
+config = Config('./config/config.json', defaultConfig)
+players = Config('./config/players.json', {})
 
 # Save the configuration file
 config.save()
@@ -26,7 +26,7 @@ logger = logMonitor(config.get("logFolder"), True)
 api = API(players.config)
 
 # Reset log
-open('./log.txt', 'w').close()
+open('./config/log.txt', 'w').close()
 
 def start():
     for user in config.get("ownUsers"):
