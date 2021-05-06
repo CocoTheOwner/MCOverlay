@@ -13,6 +13,7 @@
 - [ ] Interpret `latest.log`
 	- [ ] Lobby 1
 		- [HH:MM:SS] [Client thread/INFO]: [CHAT] [STARS?] NAME: CHAT
+		- [HH:MM:SS] [Client thread/INFO]: [CHAT] [STARS?] [RANK] NAME: CHAT
 		- [HH:MM:SS] [Client thread/INFO]: [CHAT] [RANK] NAME joined the lobby!
 			- `RANK` can be MVP+ and MVP++
 	- [ ] Game lobby ->
