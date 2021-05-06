@@ -24,8 +24,6 @@
 	- [x] Save uuid->player and player->uuid tables between runs
 - [x] Get API token from file
 - [x] Use API token and UUID to retrieve player information from Hypixel API
-- [ ] Teamcolors
-	- Not visible in chat, hard to retrieve.
 - [ ] Selectable statistics in table
 	- [ ] Index score
 	- [ ] Dynamic system showing all
@@ -58,3 +56,8 @@
 - [ ] Version in title of program
 - [ ] Improve request getting
 	- [Postman](https://learning.postman.com/docs/getting-started/introduction/)
+- [ ] Autoinvite
+	- [ ] Toggle
+	- [ ] Check stats
+		- [ ] Configurable
+	- [ ] Name mention
