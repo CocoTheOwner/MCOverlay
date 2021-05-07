@@ -26,7 +26,7 @@ class API:
 
         """
         threads = []
-        with ThreadPoolExecutor(max_workers=20) as executor:
+        with ThreadPoolExecutor(max_workers=50) as executor:
             count = 0
             total = len(playerQueue)
             for player in playerQueue:

@@ -37,7 +37,6 @@ def startMCO():
         # Update player definitions
         api.fetch(logger.getPlayers(), players)
                 
-
         time.sleep(0.1)
 
 if __name__ == '__main__':
