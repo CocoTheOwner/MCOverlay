@@ -16,8 +16,9 @@ class Config:
     def get(self, item):
         return self.config[item]
         
-    def set(self, item, value):
+    def set(self, item, value, save=False):
         self.config[item] = value
+        if save: self.save()
 
     def getAll(self):
         keys = []
