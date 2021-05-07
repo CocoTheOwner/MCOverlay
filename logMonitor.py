@@ -1,20 +1,26 @@
 
 from config import Config
 import os.path
-from types import prepare_class
 class logMonitor:
 
-    failedLine = Config("./config/missedline.json", {})
+    open("./config/missedline.txt", "w").close() # Reset file
+    open("./config/destroyedline.txt", "w").close() # Reset file
+    failedLine = "./config/missedline.txt"
+    destroyedLine = "./config/destroyedline.txt"
 
-    logFilePath = ""
-    modificationTime = 0
-    lineNumber = 0
-    debug = False
-    inGame = False
-    lobbyCount = 0
+    logFilePath = None
     lobbyName = None
-    hasQueue = False
     newToken = None
+    debug = None
+
+    modificationTime = 0
+    actualLineNumber = 0
+    lineNumber = 0
+    lobbyCount = 0
+
+    hasQueue = False
+    inGame = False
+
     playerQueue = {}
 
     def __init__(self, logFilePath, debug = False):
@@ -58,12 +64,16 @@ class logMonitor:
             line (str): Cleaned line or None (if the line was rejected)
 
         """
-        if (not line.startswith("[")): return None                           # (light)  Make sure line is not a stacktrace
-        if (line.count("[Client thread/INFO]: [CHAT]") == 0): return None    # (medium) Ensure line is chat
-        line = line.strip().split("[Client thread/INFO]: [CHAT]")[1].strip() # (medium) Split line, get useful
-        if (line == ""): return None                                         # (light)  Empty line check
-        if (not logMonitor.lineIsUseful(line)): return None                  # (medium) Usefullness check
-        return line
+        split = line.strip().split("[Client thread/INFO]: [CHAT]")
+        if (
+            line.startswith("[") and
+            line.count("[Client thread/INFO]: [CHAT]") != 0 and
+            split[1].strip() != "" and
+            logMonitor.lineIsUseful(split[1].strip())
+        ): return split[1].strip()
+        else:
+            self.destroyLine(line)
+            return None
 
     def process(self, line: str):
         """Process a line
@@ -77,7 +87,7 @@ class logMonitor:
         elif (line.startswith("You are currently connected to server ") or line.startswith("Sending you to")):
             self.moveLobby(line)
         elif (line.startswith("Taking you to")):
-            logMonitor.print("Game: [" + line.split(" ")[-1].removesuffix("!") + "]")
+            self.print("Game: [" + line.split(" ")[-1].removesuffix("!") + "]")
             return
         elif (line.count("joined the lobby!") > 0):
             self.joinLobby(line)
@@ -116,11 +126,11 @@ class logMonitor:
         if split[1].endswith(":"):
             rank = "NON"
             user = split[1].removesuffix(":")
-            message = " ".join(split[1:])
+            message = " ".join(split[2:])
         else:
             rank = logMonitor.getRank(split[1])
             user = split[2].removesuffix(":")
-            message = " ".join(split[2:])
+            message = " ".join(split[3:])
 
         # Clean the message
         message = message.replace("?", "")+"?" if message.endswith("?") else message.replace("?", "").strip()
@@ -130,7 +140,7 @@ class logMonitor:
         # Add the player to the playerqueue
         self.addPlayer(user, rank, stars)
 
-        logMonitor.print("Chat: [{}] {}{} {}".format(stars, "[" + rank + "] " if rank != "NON" else "", user, message.strip()))
+        self.print("Chat: [{}] {}{}: {}".format(stars, "[" + rank + "] " if rank != "NON" else "", user, message.strip()))
     
     def moveLobby(self, line: str):
         """Process a lobby move event
@@ -152,7 +162,7 @@ class logMonitor:
 
         # Set the lobby name if changed
         if (name != self.lobbyName):
-            logMonitor.print("Lobby:[{}] -> [{}]".format(self.lobbyName, name)) if self.lobbyName != None else logMonitor.print("Lobby:[{}]".format(name))
+            self.print("Lobby:[{}] -> [{}]".format(self.lobbyName, name)) if self.lobbyName != None else self.print("Lobby:[{}]".format(name))
             self.lobbyName = name
 
     def joinLobby(self, line: str):
@@ -176,7 +186,7 @@ class logMonitor:
 
         self.addPlayer(name, rank, -1)
 
-        logMonitor.print("Join: [" + rank + "] " + name if rank != "NON" else "Join: " + name)
+        self.print("Join: [" + rank + "] " + name if rank != "NON" else "Join: " + name)
 
     def playerJoinGame(self, line: str):
         """Process a player game lobby join event
@@ -199,7 +209,7 @@ class logMonitor:
         # Save the amount of players in the lobby
         self.lobbyCount = joinNumber
 
-        logMonitor.print("Join: {} ({})".format(name, joinNumber))
+        self.print("Join: {} ({})".format(name, joinNumber))
   
     def quitGame(self, line: str):
         """Process a game lobby quit event
@@ -218,7 +228,7 @@ class logMonitor:
         name = line.removesuffix(" has quit!").strip()
         self.removePlayer(name)
 
-        logMonitor.print("Quit: {} {}".format(name, self.lobbyCount))
+        self.print("Quit: {} {}".format(name, self.lobbyCount))
 
     def gameTime(self, line: str):
         """Process a game lobby time event
@@ -232,7 +242,7 @@ class logMonitor:
 
         time = line.removeprefix("The game starts in").removesuffix("seconds!").strip()
 
-        logMonitor.print("Time: " + time + "s")
+        self.print("Time: " + time + "s")
 
     def newApiKey(self, line: str):
         """Process a new api key event
@@ -250,7 +260,7 @@ class logMonitor:
         # Store key
         self.newToken = key
 
-        logMonitor.print("API: " + self.newToken)
+        self.print("API: " + self.newToken)
 
     def unprocessed(self, line: str):
         """Process an unprocessed message event
@@ -258,9 +268,19 @@ class logMonitor:
         Args:
             line (str): Line to process
         """
-        logMonitor.print("\n\n\n\nUNPROCESSED LINE!\n" + line + "\n\n\n\n")
+        open(self.failedLine, "a").write(str(self.actualLineNumber) + ": " + line + "\n")
+        self.print("\n\n\n\nUNPROCESSED LINE!\n" + line + "\n\n\n\n")
 
     """ Utility """
+    def destroyLine(self, line: str):
+        """Logs a line that is not processed, but did pass some checks
+
+        Args:
+            line (str): Line that is destroyed
+        
+        """
+        open(self.destroyedLine, "a").write(str(self.lineNumber) + ": " + line + "\n")
+
     def getRank(line: str):
         """Retrieves a rank from a line. Returns non if none is found
 
@@ -296,7 +316,7 @@ class logMonitor:
     def lineIsUseful(line: str):
         """Checks for line usefulness
 
-        Args:
+        :pEm
             line (str): The line to check
 
         Returns:
@@ -357,9 +377,10 @@ class logMonitor:
             self.hasQueue = False
         return q
 
-    def print(string):
+    def print(self, string):
         """Saves a line to a log file and prints the line to console
         """
         with open("./config/log.txt", "a") as f:
             f.write(string + "\n")
+        self.actualLineNumber += 1
         print(string)
