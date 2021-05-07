@@ -21,7 +21,14 @@ api = API(players.config, config.get("token"))
 
 # Main loop
 def startMCO():
-    while(True):
+    done = False
+    cycle = 0
+    while not done:
+
+        # Update cycle number
+        cycle += 1
+
+        if (cycle % 100 == 0): print("Cycled 10 seconds")
 
         # Update logger
         logger.tick()
@@ -36,8 +43,13 @@ def startMCO():
 
         # Update player definitions
         api.fetch(logger.getPlayers(), players)
-                
-        time.sleep(0.1)
+
+        # Check to see if we should quit
+        if logger.actualLineNumber > 50:
+            done = True
+        else:
+            time.sleep(0.1)
+    exit()
 
 if __name__ == '__main__':
     startMCO()
