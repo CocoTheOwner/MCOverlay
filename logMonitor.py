@@ -10,10 +10,12 @@ class logMonitor:
     lobbyCount = 0
     lobbyName = None
     hasQueue = False
+    newToken = None
 
     playerQueue = {}
 
     def __init__(self, path, debug = False):
+        open('./config/log.txt', 'w').close()
         self.path = path
         self.debug = debug
 
@@ -164,6 +166,8 @@ class logMonitor:
             self.addPlayer(user.replace(":",""), rank, stars)
 
             logMonitor.print("Chat: [{}] {}{} {}".format(stars, "[" + rank + "] " if rank != "NON" else "", user, message.strip()))
+        elif (line.startswith("Your new API key is ")):
+            self.newToken = line.removeprefix("Your new API key is ").strip()
         else:
             logMonitor.print("\n\n\n\nUNPROCESSED LINE!\n" + line + "\n\n\n\n")
 
@@ -206,6 +210,7 @@ class logMonitor:
         if (line.count("Unknown command. Type \"help\" for help.") > 0): return False
         if (line.count("[Mystery Box]") > 0 and line.count("found") > 0): return False
         if (line == "[WATCHDOG ANNOUNCEMENT]"): return False
+        if (line == "You already have an API Key, are you sure you want to regenerate it?"): return False
         if (line == "Blacklisted modifications are a bannable offense!"): return False
         if (line == "A player has been removed from your lobby."): return False
         if (line == "Use /report to continue helping out the server!"): return False
@@ -224,9 +229,11 @@ class logMonitor:
             self.hasQueue = len(self.playerQueue) > 0
 
     def getPlayers(self):
-        q = self.playerQueue.copy()
-        self.playerQueue = {}
-        self.hasQueue = False
+        q = {}
+        if (self.hasQueue):
+            q = self.playerQueue.copy()
+            self.playerQueue = {}
+            self.hasQueue = False
         return q
 
     def print(string):
