@@ -11,6 +11,7 @@ class Config:
         self.ensureFileExistNotEmpty()
         self.load()
         self.ensureFileValid()
+        self.save()
 
     def get(self, item):
         return self.config[item]
