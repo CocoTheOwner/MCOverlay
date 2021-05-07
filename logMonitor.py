@@ -25,8 +25,8 @@ class logMonitor:
     def tick(self):
         """Ticks the logger. Only ticks if there is a log change.
         """
-        if (self.modificationTime != os.path.getmodificationTime(self.logFilePath)):
-            self.modificationTime = os.path.getmodificationTime(self.logFilePath)
+        if (self.modificationTime != os.path.getmtime(self.logFilePath)):
+            self.modificationTime = os.path.getmtime(self.logFilePath)
             self.readlog()
 
     def readlog(self):
@@ -45,7 +45,8 @@ class logMonitor:
             self.lineNumber += 1
 
             # Clean and process the line
-            self.process(self.cleanLine(line))
+            line = self.cleanLine(line)
+            if line != None: self.process(line) 
 
     def cleanLine(self, line: str):
         """Cleans an inputted line and prevents unimportant lines from being parsed
@@ -142,7 +143,14 @@ class logMonitor:
             Sending you to x
         
         """
+
+        # Reset the lobby counter
+        self.lobbyCount = 0
+
+        # Retrieve the lobby name
         name = line.removeprefix("You are currently connected to server").removeprefix("Sending you to").strip().split(' ')[0]
+
+        # Set the lobby name if changed
         if (name != self.lobbyName):
             logMonitor.print("Lobby:[{}] -> [{}]".format(self.lobbyName, name)) if self.lobbyName != None else logMonitor.print("Lobby:[{}]".format(name))
             self.lobbyName = name
@@ -156,6 +164,9 @@ class logMonitor:
         Example:
             >>> [RANK] username joined the lobby! <<<
         """
+
+        # Reset the lobby counter
+        self.lobbyCount = 0
 
         line = line.removeprefix(">>>").removesuffix("joined the lobby!").strip().split(" ")
         # ["[RANK]", "username"]
@@ -207,7 +218,7 @@ class logMonitor:
         name = line.removesuffix(" has quit!").strip()
         self.removePlayer(name)
 
-        logMonitor.print("Quit: " + name)
+        logMonitor.print("Quit: {} {}".format(name, self.lobbyCount))
 
     def gameTime(self, line: str):
         """Process a game lobby time event
