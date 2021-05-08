@@ -57,9 +57,7 @@ class PlayerQueue:
 class logMonitor:
 
     combinedLog = "./logs/combined.txt"
-    removedLog = "./logs/removedLog.txt"
     open(combinedLog, "w").close() # Reset file
-    open(removedLog, "w").close() # Reset file
 
     lobbyName = None
     newToken = None
@@ -101,7 +99,12 @@ class logMonitor:
 
             # Clean and process the line
             line = self.cleanLine(line)
-            if line != None: self.process(line) 
+            if line == None:
+                continue
+            elif not logMonitor.lineIsUseful(line):
+                self.file("USLS", line, False)
+            else:
+                self.process(line) 
 
     def cleanLine(self, line: str):
         """Cleans an inputted line and prevents unimportant lines from being parsed
@@ -117,7 +120,7 @@ class logMonitor:
             split = line.strip().split("[Client thread/INFO]: [CHAT]")[1].strip()
             if (split != ""):
                 return split
-        self.file("UNK", line, False)
+            self.file("REMV", line, False)
         return None
 
     def process(self, line: str):
@@ -126,8 +129,7 @@ class logMonitor:
         Args:
             line (str): The line to process
         
-        """        
-
+        """
         if (line.startswith("[") and line.split(" ")[0].endswith("?]") and (line.split(" ")[1].endswith(":") or line.split(" ")[2].endswith(":")) and line.count(" ") > 1):
             self.lobbyChatMessage(line)
         elif (line.startswith("You are currently connected to server ") or line.startswith("Sending you to")):
@@ -144,13 +146,14 @@ class logMonitor:
             self.whoCommand(line)
         elif (line.endswith("has quit!")):
             self.quitGame(line)
-        elif (line.startswith("The game starts in") and line.endswith("seconds!")):
+        elif (line.startswith("The game starts in") and line.count("second") > 0):
             self.gameTime(line)
+        elif (line == "We don't have enough players! Start cancelled."):
+            self.file("Game", "Start cancelled")
         elif (line.startswith("Your new API key is ")):
             self.newAPIKey(line)
         else:
             self.unprocessed(line)
-
 
     """ Chat message events """
     def lobbyChatMessage(self, line: str):
@@ -388,7 +391,7 @@ class logMonitor:
         Args:
             line (str): Line to process
         """
-        self.file("UNK", line)
+        self.file("UNK", line, False)
 
     """ Utility """
     def getRank(line: str):
@@ -423,6 +426,39 @@ class logMonitor:
             return "Owner"
         return "NON"
 
+    def lineIsUseful(line: str):
+        """Checks for line usefulness
+
+        Args:
+            line (str): The line to check
+
+        Returns:
+            bool: True if useful, false if not.
+
+        """
+        if (line == ""): return False
+        if (line == "[WATCHDOG ANNOUNCEMENT]"): return False
+        if (line == "This server is full! (Server closed)"): return False
+        if (line == "A player has been removed from your lobby."): return False
+        if (line == "You were kicked while joining that server!"): return False
+        if (line == "Use /report to continue helping out the server!"): return False
+        if (line == "Blacklisted modifications are a bannable offense!"): return False
+        if (line == "You already have an API Key, are you sure you want to regenerate it?"): return False
+
+        if (line.replace("?","") == ""): return False
+        if (line.replace("-","") == ""): return False
+        if (line.count("Guild > ") > 0): return False
+        if (line.count("Friend > ") > 0): return False
+        if (line.count("You are AFK") > 0): return False
+        if (line.count("You purchased") > 0): return False
+        if (line.count("Unknown command. Type \"help\" for help.") > 0): return False
+        if (line.count("[Mystery Box]") > 0 and line.count("found") > 0): return False
+        if (line.count("You tipped") > 0 and line.count("players!") > 0): return False
+        if (line.count("found a") > 0 and line.count("Mystery Box!") > 0): return False
+        if (line.count("Watchdog has banned") > 0 and line.count("players in the last") > 0): return False
+        if (line.count("Staff have banned an additional") > 0 and line.count("in the last") > 0): return False
+        return True
+
     def file(self, type: str, message: str, printLine = True):
         """Print and log a message
 
@@ -432,11 +468,12 @@ class logMonitor:
             printLine (bool): If true, prints the line
         """
         message = "[{}] {} | {}: {}".format(
-            self.lineNumber,
+            (6-len(str(self.lineNumber))) * "0" + str(self.lineNumber),
             self.status + (6 - len(self.status)) * " ",
             type + (6 - len(type)) * " ",
             message
         )
+        message = message if len(message) < 150 else message[:150].strip() + " (...)"
         if printLine: print(message)
-        open(self.combinedLog, "a").write(message)
+        open(self.combinedLog, "a").write(message + "\n")
         
