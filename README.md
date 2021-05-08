@@ -47,6 +47,7 @@
 	- [ ] Guild detection
 	- [ ] Staff detection
 	- [ ] Party list detection
+		- [ ] Party promotion detection (who is leader, moderator, GUI option)
 	- [ ] Who-command detection
 - [ ] Error and warning system
 	- [ ] Timeout
