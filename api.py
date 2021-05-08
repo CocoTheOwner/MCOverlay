@@ -4,6 +4,8 @@ import json
 from json.decoder import JSONDecodeError
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from fake_useragent import UserAgent
+ua = UserAgent()
 """Module for retrieving data from several preset API pages"""
 class API:
     players = {}
@@ -131,7 +133,7 @@ class API:
         content = None
 
         try:
-            content = json.loads(requests.get(link, headers={'Connection': 'close'}).content)
+            content = json.loads(requests.get(link, headers={'User-Agent':str(ua.random), "Connection": "close"}).content)
         except JSONDecodeError as e:
             print("Failed to request from {} because of JSON Decode Error. Likely due to invalid link or no connection.".format(e))
         except Exception as e:
