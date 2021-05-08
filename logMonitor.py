@@ -1,30 +1,79 @@
 
 from config import Config
 import os.path
+class PlayerQueue:
+    queue = {}
+    empty = True
+
+    def get(self):
+        """Retrieves all players currently in the queue and clears the queue
+
+        Returns:
+            dict: Contains all queued players
+        
+        """
+        q = self.queue.copy()
+        self.queue = {}
+        self.empty = True
+        return q
+
+    def updateEmpty(self):
+        """Updates the empty variable based on amount of queued players
+        """
+        self.empty = len(self.queue) == 0
+
+    def delete(self, name: str):
+        """Removes the player by given argument from the playerqueue
+
+        Args:
+            name (str): Name of the player to remove
+        
+        """
+        for i,element in enumerate(self.queue):
+            if (element[0] == name):
+                del self.queue[i]
+        self.updateEmpty()
+
+    def add(self, name: str, rank: str, stars: int):
+        """Adds a player to the playerqueue by name, rank and stars
+
+        Args:
+            name (str): The name of the player
+            rank (str): The rank of the player
+            stars (int): The amount of stars for the player
+        """
+        if not name in self.queue:
+            self.queue[name] = {"rank": rank, "stars": stars}
+        else:
+            info = self.queue[name]
+            savedRank = info.get("rank")
+            savedStars = info.get("stars")
+            info = {
+                "rank": (rank if rank != "UNK" else savedRank),
+                "stars": (stars if stars != -1 else savedStars)
+            }
+        self.updateEmpty()    
+
 class logMonitor:
 
-    open("./config/missedline.txt", "w").close() # Reset file
-    open("./config/destroyedline.txt", "w").close() # Reset file
-    failedLine = "./config/missedline.txt"
-    destroyedLine = "./config/destroyedline.txt"
+    combinedLog = "./logs/combined.txt"
+    removedLog = "./logs/removedLog.txt"
+    open(combinedLog, "w").close() # Reset file
+    open(removedLog, "w").close() # Reset file
 
-    logFilePath = None
     lobbyName = None
     newToken = None
     debug = None
 
     modificationTime = 0
-    actualLineNumber = 0
     lineNumber = 0
-    lobbyCount = 0
+    playersInLobby = 0
 
-    hasQueue = False
-    inGame = False
+    status = "Exit" # Should at any time be Exit, Lobby or Game (for outside of a game lobby, inside a game lobby or in a started game)
 
-    playerQueue = {}
+    queue = PlayerQueue()
 
     def __init__(self, logFilePath, debug = False):
-        open('./config/log.txt', 'w').close()
         self.logFilePath = logFilePath
         self.debug = debug
 
@@ -64,16 +113,12 @@ class logMonitor:
             line (str): Cleaned line or None (if the line was rejected)
 
         """
-        split = line.strip().split("[Client thread/INFO]: [CHAT]")
-        if (
-            line.startswith("[") and
-            line.count("[Client thread/INFO]: [CHAT]") != 0 and
-            split[1].strip() != "" and
-            logMonitor.lineIsUseful(split[1].strip())
-        ): return split[1].strip()
-        else:
-            self.destroyLine(line)
-            return None
+        if (line.count("[Client thread/INFO]: [CHAT]") != 0): 
+            split = line.strip().split("[Client thread/INFO]: [CHAT]")[1].strip()
+            if (split != ""):
+                return split
+        self.file("UNK", line, False)
+        return None
 
     def process(self, line: str):
         """Process a line
@@ -81,30 +126,34 @@ class logMonitor:
         Args:
             line (str): The line to process
         
-        """
+        """        
+
         if (line.startswith("[") and line.split(" ")[0].endswith("?]") and (line.split(" ")[1].endswith(":") or line.split(" ")[2].endswith(":")) and line.count(" ") > 1):
-            self.chatMessage(line)
+            self.lobbyChatMessage(line)
         elif (line.startswith("You are currently connected to server ") or line.startswith("Sending you to")):
             self.moveLobby(line)
         elif (line.startswith("Taking you to")):
-            self.print("Game: [" + line.split(" ")[-1].removesuffix("!") + "]")
-            return
+            self.file("Lobby", "[" + line.split(" ")[-1].removesuffix("!") + "]")
+        elif (line == "Bed Wars"):
+            self.endGame()
         elif (line.count("joined the lobby!") > 0):
             self.joinLobby(line)
         elif (line.count("has joined") > 0):
             self.playerJoinGame(line)
+        elif (line.startswith("ONLINE:")):
+            self.whoCommand(line)
         elif (line.endswith("has quit!")):
             self.quitGame(line)
         elif (line.startswith("The game starts in") and line.endswith("seconds!")):
             self.gameTime(line)
         elif (line.startswith("Your new API key is ")):
-            self.newApiKey(line)
+            self.newAPIKey(line)
         else:
             self.unprocessed(line)
 
 
     """ Chat message events """
-    def chatMessage(self, line: str):
+    def lobbyChatMessage(self, line: str):
         """Process a lobby chat event
 
         Args:
@@ -113,7 +162,11 @@ class logMonitor:
         Examples:
             [STAR?] username: message may contain spaces
             [STAR?] [RANK] username: message may contain spaces
+
+        Status:
+            Exit
         """
+        self.status = "Exit"
 
         split = line.split(" ")
         # ["[STAR?]", "username:", "message", "may", "contain", "spaces"]
@@ -138,9 +191,11 @@ class logMonitor:
             message = message.replace("  ", " ")
             
         # Add the player to the playerqueue
-        self.addPlayer(user, rank, stars)
+        self.queue.add(user, rank, stars)
 
-        self.print("Chat: [{}] {}{}: {}".format(stars, "[" + rank + "] " if rank != "NON" else "", user, message.strip()))
+        rank = "[" + rank + "] " if rank != "NON" else ""
+
+        self.file("Chat", "[{}] {}{}: {}".format(stars, rank, user, message.strip()))
     
     def moveLobby(self, line: str):
         """Process a lobby move event
@@ -152,17 +207,20 @@ class logMonitor:
             You are currently connected to server x
             Sending you to x
         
+        Status:
+            Unaffected
         """
 
         # Reset the lobby counter
-        self.lobbyCount = 0
+        self.playersInLobby = 0
 
         # Retrieve the lobby name
         name = line.removeprefix("You are currently connected to server").removeprefix("Sending you to").strip().split(' ')[0]
 
         # Set the lobby name if changed
         if (name != self.lobbyName):
-            self.print("Lobby:[{}] -> [{}]".format(self.lobbyName, name)) if self.lobbyName != None else self.print("Lobby:[{}]".format(name))
+            self.file("Lobby", "[{}] -> [{}]".format(self.lobbyName, name))
+            self.playersInLobby = 0
             self.lobbyName = name
 
     def joinLobby(self, line: str):
@@ -173,20 +231,44 @@ class logMonitor:
 
         Example:
             >>> [RANK] username joined the lobby! <<<
+
+        Status:
+            Exit
         """
+        self.status = "Exit"
 
         # Reset the lobby counter
-        self.lobbyCount = 0
+        self.playersInLobby = 0
 
         line = line.removeprefix(">>>").removesuffix("joined the lobby!").strip().split(" ")
         # ["[RANK]", "username"]
 
         rank = logMonitor.getRank(line[0])
+        rank = "[" + rank + "] " if rank != "NON" else ""
         name = line[1]
 
-        self.addPlayer(name, rank, -1)
+        self.queue.add(name, rank, -1)
 
-        self.print("Join: [" + rank + "] " + name if rank != "NON" else "Join: " + name)
+
+        self.file("Player", "{}{}".format(rank, name))
+
+    def endGame(self):
+        """Process a game end event
+
+        Example:
+            "Bed Wars"
+
+        Status:
+            Based on current status type, switches to:
+            Exit (if in game)
+            Game (if in lobby)
+        """
+        if self.status == "Game":
+            self.status = "Exit"
+            self.file("Game", "Finished")
+        else:
+            self.status = "Game"
+            self.file("Game", "Started")
 
     def playerJoinGame(self, line: str):
         """Process a player game lobby join event
@@ -196,7 +278,12 @@ class logMonitor:
 
         Example:
             username has joined (x/y)!
+
+        Status:
+            Lobby
         """
+        self.status = "Lobby"
+
         line = line.split(" ")
         # ["username", "has", "joined", "(x/y)!"]
 
@@ -204,13 +291,33 @@ class logMonitor:
         joinNumber = int(line[-1].replace("(","").replace(")!","").split("/")[0])
 
         # Store player by username
-        self.playerQueue[name] = "UNK"
+        self.queue.add(name, "UNK", -1)
 
         # Save the amount of players in the lobby
-        self.lobbyCount = joinNumber
+        self.playersInLobby = joinNumber
 
-        self.print("Join: {} ({})".format(name, joinNumber))
-  
+        self.file("Join", "{} ({})".format(name, joinNumber))
+    
+    def whoCommand(self, line: str):
+        """Process a who command
+
+        Args:
+            line (str): Line to process
+
+        Example:
+            ONLINE: username, username, username, username, ...
+
+        Status:
+            Lobby
+        """
+        self.status = "Lobby"
+        line = line.removeprefix("ONLINE: ").split(", ")
+        self.playersInLobby = len(line)
+        for username in line:
+            self.file("/who", username)
+            self.queue.add(username, "UNK", -1)
+        self.file("/who:", "{} players in the lobby".format(len(line)))
+
     def quitGame(self, line: str):
         """Process a game lobby quit event
 
@@ -219,16 +326,20 @@ class logMonitor:
 
         Example:
             username has quit!
+
+        Status:
+            Lobby
         """
+        self.status = "Lobby"
 
         # Remove one player from the lobby count
-        self.lobbyCount -= 1
+        self.playersInLobby -= 1
 
         # Remove the player from the queue
         name = line.removesuffix(" has quit!").strip()
-        self.removePlayer(name)
+        self.queue.delete(name)
 
-        self.print("Quit: {} {}".format(name, self.lobbyCount))
+        self.file("Quit", "{} ({})".format(name, self.playersInLobby))
 
     def gameTime(self, line: str):
         """Process a game lobby time event
@@ -238,13 +349,17 @@ class logMonitor:
 
         Example:
             The game starts in x seconds!
+
+        Status:
+            Lobby
         """
+        self.status = "Lobby"
 
         time = line.removeprefix("The game starts in").removesuffix("seconds!").strip()
 
-        self.print("Time: " + time + "s")
+        self.file("Time", time + "s")
 
-    def newApiKey(self, line: str):
+    def newAPIKey(self, line: str):
         """Process a new api key event
 
         Args:
@@ -252,7 +367,12 @@ class logMonitor:
 
         Examples:
             Your new API key is x
+
+        Status:
+            Exit
         """
+
+        self.status = "Exit"
 
         # Retrieve key
         key = line.removeprefix("Your new API key is ").strip()
@@ -260,7 +380,7 @@ class logMonitor:
         # Store key
         self.newToken = key
 
-        self.print("API: " + self.newToken)
+        self.file("API", key)
 
     def unprocessed(self, line: str):
         """Process an unprocessed message event
@@ -268,19 +388,9 @@ class logMonitor:
         Args:
             line (str): Line to process
         """
-        open(self.failedLine, "a").write(str(self.actualLineNumber) + ": " + line + "\n")
-        self.print("\n\n\n\nUNPROCESSED LINE!\n" + line + "\n\n\n\n")
+        self.file("UNK", line)
 
     """ Utility """
-    def destroyLine(self, line: str):
-        """Logs a line that is not processed, but did pass some checks
-
-        Args:
-            line (str): Line that is destroyed
-        
-        """
-        open(self.destroyedLine, "a").write(str(self.lineNumber) + ": " + line + "\n")
-
     def getRank(line: str):
         """Retrieves a rank from a line. Returns non if none is found
 
@@ -313,74 +423,20 @@ class logMonitor:
             return "Owner"
         return "NON"
 
-    def lineIsUseful(line: str):
-        """Checks for line usefulness
-
-        :pEm
-            line (str): The line to check
-
-        Returns:
-            bool: True if useful, false if not.
-
-        """
-        line = line.strip()
-        if (line.count("You are AFK") > 0): return False
-        if (line.count("Friend > ") > 0): return False
-        if (line.count("Guild > ") > 0): return False
-        if (line.count("You tipped") > 0 and line.count("players!") > 0): return False
-        if (line.count("found a") > 0 and line.count("Mystery Box!") > 0): return False
-        if (line.count("Watchdog has banned") > 0 and line.count("players in the last") > 0): return False
-        if (line.count("Staff have banned an additional") > 0 and line.count("in the last") > 0): return False
-        if (line.count("Unknown command. Type \"help\" for help.") > 0): return False
-        if (line.count("[Mystery Box]") > 0 and line.count("found") > 0): return False
-        if (line == "[WATCHDOG ANNOUNCEMENT]"): return False
-        if (line == "You already have an API Key, are you sure you want to regenerate it?"): return False
-        if (line == "Blacklisted modifications are a bannable offense!"): return False
-        if (line == "A player has been removed from your lobby."): return False
-        if (line == "Use /report to continue helping out the server!"): return False
-        if (line == "You were kicked while joining that server!"): return False
-        if (line == "This server is full! (Server closed)"): return False
-        return True
-
-    def addPlayer(self, name: str, rank: str, stars: int):
-        """Adds a player to the playerqueue by name, rank and stars
+    def file(self, type: str, message: str, printLine = True):
+        """Print and log a message
 
         Args:
-            name (str): The name of the player
-            rank (str): The rank of the player
-            stars (int): The amount of stars for the player
+            type (str): The type of event
+            message (str): The message to display
+            printLine (bool): If true, prints the line
         """
-        self.playerQueue[name] = {rank, stars}
-        self.hasQueue = len(self.playerQueue) > 0
+        message = "[{}] {} | {}: {}".format(
+            self.lineNumber,
+            self.status + (6 - len(self.status)) * " ",
+            type + (6 - len(type)) * " ",
+            message
+        )
+        if printLine: print(message)
+        open(self.combinedLog, "a").write(message)
         
-    def removePlayer(self, name: str):
-        """Removes the player by given argument from the playerqueue
-
-        Args:
-            name (str): Name of the player to remove
-        """
-        for i,element in enumerate(self.playerQueue):
-            if (element[0] == name):
-                del self.playerQueue[i]
-            self.hasQueue = len(self.playerQueue) > 0
-
-    def getPlayers(self):
-        """Retrieves all players currently in the queue and clears the queue
-
-        Returns:
-            dict: Contains all queued players
-        """
-        q = {}
-        if (self.hasQueue):
-            q = self.playerQueue.copy()
-            self.playerQueue = {}
-            self.hasQueue = False
-        return q
-
-    def print(self, string):
-        """Saves a line to a log file and prints the line to console
-        """
-        with open("./config/log.txt", "a") as f:
-            f.write(string + "\n")
-        self.actualLineNumber += 1
-        print(string)
