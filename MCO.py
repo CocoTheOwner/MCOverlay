@@ -13,7 +13,7 @@ config = Config('./config/config.json', {
 })
 players = Config('./logs/players.json', {})
 controller = Config('./config/controller.json', {
-    "stop": False,
+    "stop": True,
     "lineCap": -1
 })
 
@@ -22,9 +22,6 @@ logger = logMonitor(config.get("logFolder"), False)
 
 # Create an API object
 api = API(players.config, config.get("token"))
-
-# Create or reset controller file
-open("./controller.txt", "w").close()
 
 # Main loop
 def startMCO():
