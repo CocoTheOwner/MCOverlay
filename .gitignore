@@ -1,5 +1,8 @@
 __pycache__
-.idea
+
+# Configuration and log folder
 config
+logs
+
+# Test file
 test.py
-controller.txt
