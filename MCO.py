@@ -3,7 +3,7 @@ from logMonitor import logMonitor
 from config import Config
 import time
 
-# Load configuration file (if empty, loads defaultConfig)
+# Configs and controller
 config = Config('./config/config.json', {
     "ownUsers": [
         "cocodef9"
@@ -12,18 +12,24 @@ config = Config('./config/config.json', {
     "logFolder": "C:\\Users\\sjoer\\Appdata\\Roaming\\Minecraft 1.8.9\\logs\\latest.log"
 })
 players = Config('./config/players.json', {})
+controller = Config('./config/controller.json', {
+    "stop": False,
+    "lineCap": -1
+})
 
 # Create a configuration file logger
-logger = logMonitor(config.get("logFolder"), True)
+logger = logMonitor(config.get("logFolder"), False)
 
 # Create an API object
 api = API(players.config, config.get("token"))
 
+# Create or reset controller file
+open("./controller.txt", "w").close()
+
 # Main loop
 def startMCO():
-    done = False
     cycle = 0
-    while not done:
+    while True:
 
         # Update cycle number
         cycle += 1
@@ -44,11 +50,13 @@ def startMCO():
         # Update player definitions
         api.fetch(logger.getPlayers(), players)
 
-        # Check to see if we should quit
-        if logger.actualLineNumber > 50:
-            done = True
-        else:
-            time.sleep(0.1)
+        # Check controller
+        controller.load()
+        lc = controller.get("lineCap")
+        if controller.get("stop") or (lc != -1 and logger.actualLineNumber >= lc):
+            break
+
+        time.sleep(0.1)
     exit()
 
 if __name__ == '__main__':
