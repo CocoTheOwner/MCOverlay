@@ -11,7 +11,7 @@ config = Config('./config/config.json', {
     "token": "206baa63-dcd2-47f3-b197-b43de4e3301f",
     "logFolder": "C:\\Users\\sjoer\\Appdata\\Roaming\\Minecraft 1.8.9\\logs\\latest.log"
 })
-players = Config('./config/players.json', {})
+players = Config('./logs/players.json', {})
 controller = Config('./config/controller.json', {
     "stop": False,
     "lineCap": -1
@@ -48,7 +48,7 @@ def startMCO():
             logger.newToken = None
 
         # Update player definitions
-        api.fetch(logger.getPlayers(), players)
+        api.fetch(logger.queue.get(), players)
 
         # Check controller
         controller.load()
