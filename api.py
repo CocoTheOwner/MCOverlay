@@ -82,11 +82,12 @@ class API:
         """
         #if (self.debug): print("Downloading stats of {} ({})".format(player, uuid))
         print("Downloading stats of {} ({})".format(player, uuid))
-        request = None #API.getRequest("https://api.hypixel.net/player?key={}&uuid={}".format(self.token, uuid))
+        request = API.getRequest("https://api.hypixel.net/player?key={}&uuid={}".format(self.token, uuid))
         if request == None or request["success"] != "true":
             self.players[uuid] = player
             return None
         else:
+            print("{}'s stats download successful".format(player))
             self.players[uuid] = request["player"]
             return request["player"]
 
