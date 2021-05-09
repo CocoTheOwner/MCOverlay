@@ -9,6 +9,7 @@ class LogMonitor:
     open(combinedLog, "w").close() # Reset file
 
     lobbyName = None
+    mainUsers = None
     newToken = None
     debug = None
 
@@ -16,12 +17,14 @@ class LogMonitor:
     lineNumber = 0
     playersInLobby = 0
 
+
     status = GS.unknown
 
     queue = PlayerQueue()
 
-    def __init__(self, logFilePath, debug = False):
+    def __init__(self, logFilePath: str, mainUsers, debug = False):
         self.logFilePath = logFilePath
+        self.mainUsers = mainUsers
         self.debug = debug
 
     def tick(self):
@@ -41,9 +44,8 @@ class LogMonitor:
         if len(content) < self.lineNumber:
             self.lineNumber = 0
             if self.debug: print("Reset linenumber. Likely due to Minecraft restarting.")
-
         # Selects log lines that need to be seen
-        if self.lineNumber != 0: content = content[self.lineNumber + 1:content.count("\n") + 1]
+        if self.lineNumber != 0: content = content[self.lineNumber + 1:len(content)]
 
         # Loops over all lines in reversed order
         for line in content:
@@ -144,6 +146,10 @@ class LogMonitor:
         message = message.replace("?", "")+"?" if message.endswith("?") else message.replace("?", "").strip()
         while (message.count("  ") > 0):
             message = message.replace("  ", " ")
+
+        # Check if the player is the main player
+        if user in self.mainUsers:
+            return
             
         # Add the player to the playerqueue
         self.queue.add(user, rank, stars)
