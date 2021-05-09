@@ -1,8 +1,6 @@
-import time
+import time, json, requests
 from Config import Config
-import json
 from json.decoder import JSONDecodeError
-import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from fake_useragent import UserAgent
 
@@ -13,12 +11,10 @@ class API:
     debug = False
 
     uuidsFile = Config("./cache/uuids.json", {})
-    statsFile = Config("./cache/stats.json", {})
-    uuidsFile.load()
-    statsFile.load()
-
     uuids = uuidsFile.config
-    stats = statsFile.config
+    uuidsFile.load()
+
+    stats = {}
 
     # TODO: Queue party and self for statistics refresh when requested
 
@@ -37,7 +33,7 @@ class API:
             print("Minecraft API is down!")
             return
         threads = []
-        with ThreadPoolExecutor(max_workers=50) as executor:
+        with ThreadPoolExecutor(max_workers=10) as executor:
             count = 0
             total = len(playerQueue)
             for player in playerQueue:
@@ -45,14 +41,11 @@ class API:
                 threads.append(executor.submit(self.getPlayerData, player))
 
             for task in as_completed(threads):
-                if self.debug and (total-count)%10==0: print("Completed task ({}/{}) | Result: {}".format(total - count, total, str(task.result())))
+                if self.debug and (total-count)%10==0: print("Completed task ({}/{}) | Result: {}".format(total - count, total, str(len(task.result()))))
                 count -= 1
                 
             executor.shutdown(True)
-        time.sleep(10)
         self.uuidsFile.save()
-        self.statsFile.save()
-        
 
     def getPlayerData(self, player):
         """Retrieves player data of a player
@@ -73,7 +66,7 @@ class API:
             # Get Stats from hypixel's API
             stats = self.hypixel(player, uuid)
             if stats == None: return None
-            self.statsFile.set(uuid, stats)
+            self.stats[uuid] = stats
 
             # Return the statistics
             return stats
@@ -82,8 +75,8 @@ class API:
             print("Failed player fetch for " + player)
             raise e
         except Exception as e:
-            print("An unhandled exception was raised for player: " + player)
-            raise 
+            print("An unhandled exception was raised for player: {}\nError: {}".format(player, str(type(e))))
+            raise e
 
     def hypixel_stats(self):
         """Retrieve hypixel API server information
