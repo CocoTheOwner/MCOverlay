@@ -1,60 +1,7 @@
-
-from config import Config
 import os.path
-class PlayerQueue:
-    queue = {}
-    empty = True
-
-    def get(self):
-        """Retrieves all players currently in the queue and clears the queue
-
-        Returns:
-            dict: Contains all queued players
-        
-        """
-        q = self.queue.copy()
-        self.queue = {}
-        self.empty = True
-        return q
-
-    def updateEmpty(self):
-        """Updates the empty variable based on amount of queued players
-        """
-        self.empty = len(self.queue) == 0
-
-    def delete(self, name: str):
-        """Removes the player by given argument from the playerqueue
-
-        Args:
-            name (str): Name of the player to remove
-        
-        """
-        for i,element in enumerate(self.queue):
-            if (element[0] == name):
-                del self.queue[i]
-        self.updateEmpty()
-
-    def add(self, name: str, rank: str, stars: int):
-        """Adds a player to the playerqueue by name, rank and stars
-
-        Args:
-            name (str): The name of the player
-            rank (str): The rank of the player
-            stars (int): The amount of stars for the player
-        """
-        if not name in self.queue:
-            self.queue[name] = {"rank": rank, "stars": stars}
-        else:
-            info = self.queue[name]
-            savedRank = info.get("rank")
-            savedStars = info.get("stars")
-            info = {
-                "rank": (rank if rank != "UNK" else savedRank),
-                "stars": (stars if stars != -1 else savedStars)
-            }
-        self.updateEmpty()    
-
-class logMonitor:
+from ChatEvents import ChatEvents as CE, GameStatus as GS
+from PlayerQueue import PlayerQueue
+class LogMonitor:
 
     combinedLog = "./logs/combined.txt"
     open(combinedLog, "w").close() # Reset file
@@ -67,7 +14,7 @@ class logMonitor:
     lineNumber = 0
     playersInLobby = 0
 
-    status = "Exit" # Should at any time be Exit, Lobby or Game (for outside of a game lobby, inside a game lobby or in a started game)
+    status = GS.unknown
 
     queue = PlayerQueue()
 
@@ -101,7 +48,7 @@ class logMonitor:
             line = self.cleanLine(line)
             if line == None:
                 continue
-            elif not logMonitor.lineIsUseful(line):
+            elif not LogMonitor.lineIsUseful(line):
                 self.file("USLS", line, False)
             else:
                 self.process(line) 
@@ -120,7 +67,7 @@ class logMonitor:
             split = line.strip().split("[Client thread/INFO]: [CHAT]")[1].strip()
             if (split != ""):
                 return split
-            self.file("REMV", line, False)
+            self.file(CE.removed, line)
         return None
 
     def process(self, line: str):
@@ -132,10 +79,8 @@ class logMonitor:
         """
         if (line.startswith("[") and line.split(" ")[0].endswith("?]") and (line.split(" ")[1].endswith(":") or line.split(" ")[2].endswith(":")) and line.count(" ") > 1):
             self.lobbyChatMessage(line)
-        elif (line.startswith("You are currently connected to server ") or line.startswith("Sending you to")):
+        elif (line.startswith("You are currently connected to server ") or line.startswith("Sending you to") or line.startswith("Taking you to")):
             self.moveLobby(line)
-        elif (line.startswith("Taking you to")):
-            self.file("Lobby", "[" + line.split(" ")[-1].removesuffix("!") + "]")
         elif (line == "Bed Wars"):
             self.endGame()
         elif (line.count("joined the lobby!") > 0):
@@ -167,9 +112,9 @@ class logMonitor:
             [STAR?] [RANK] username: message may contain spaces
 
         Status:
-            Exit
+            mainLobby
         """
-        self.status = "Exit"
+        self.status = GS.mainLobby
 
         split = line.split(" ")
         # ["[STAR?]", "username:", "message", "may", "contain", "spaces"]
@@ -184,7 +129,7 @@ class logMonitor:
             user = split[1].removesuffix(":")
             message = " ".join(split[2:])
         else:
-            rank = logMonitor.getRank(split[1])
+            rank = LogMonitor.getRank(split[1])
             user = split[2].removesuffix(":")
             message = " ".join(split[3:])
 
@@ -198,7 +143,7 @@ class logMonitor:
 
         rank = "[" + rank + "] " if rank != "NON" else ""
 
-        self.file("Chat", "[{}] {}{}: {}".format(stars, rank, user, message.strip()))
+        self.file(CE.chat, "[{}] {}{}: {}".format(stars, rank, user, message.strip()))
     
     def moveLobby(self, line: str):
         """Process a lobby move event
@@ -209,20 +154,21 @@ class logMonitor:
         Example:
             You are currently connected to server x
             Sending you to x
+            Taking you to x
         
         Status:
-            Unaffected
+            Unchanged
         """
 
         # Reset the lobby counter
         self.playersInLobby = 0
 
         # Retrieve the lobby name
-        name = line.removeprefix("You are currently connected to server").removeprefix("Sending you to").strip().split(' ')[0]
+        name = line.removeprefix("You are currently connected to server").removeprefix("Sending you to").removeprefix("Taking you to").strip().split(' ')[0]
 
         # Set the lobby name if changed
         if (name != self.lobbyName):
-            self.file("Lobby", "[{}] -> [{}]".format(self.lobbyName, name))
+            self.file(CE.lobby, "[{}] -> [{}]".format(self.lobbyName, name))
             self.playersInLobby = 0
             self.lobbyName = name
 
@@ -236,9 +182,9 @@ class logMonitor:
             >>> [RANK] username joined the lobby! <<<
 
         Status:
-            Exit
+            MainLobby
         """
-        self.status = "Exit"
+        self.status = GS.mainLobby
 
         # Reset the lobby counter
         self.playersInLobby = 0
@@ -246,14 +192,14 @@ class logMonitor:
         line = line.removeprefix(">>>").removesuffix("joined the lobby!").strip().split(" ")
         # ["[RANK]", "username"]
 
-        rank = logMonitor.getRank(line[0])
+        rank = LogMonitor.getRank(line[0])
         rank = "[" + rank + "] " if rank != "NON" else ""
         name = line[1]
 
         self.queue.add(name, rank, -1)
 
 
-        self.file("Player", "{}{}".format(rank, name))
+        self.file(CE.player, "{}{}".format(rank, name))
 
     def endGame(self):
         """Process a game end event
@@ -263,15 +209,15 @@ class logMonitor:
 
         Status:
             Based on current status type, switches to:
-            Exit (if in game)
-            Game (if in lobby)
+            MainLobby (if in game)
+            InGame (if in lobby)
         """
-        if self.status == "Game":
-            self.status = "Exit"
-            self.file("Game", "Finished")
+        if self.status == GS.inGame:
+            self.status = GS.mainLobby
+            self.file(CE.game, "Finished")
         else:
-            self.status = "Game"
-            self.file("Game", "Started")
+            self.status = GS.inGame
+            self.file(CE.game, "Started")
 
     def playerJoinGame(self, line: str):
         """Process a player game lobby join event
@@ -283,9 +229,9 @@ class logMonitor:
             username has joined (x/y)!
 
         Status:
-            Lobby
+            GameLobby
         """
-        self.status = "Lobby"
+        self.status = GS.gameLobby
 
         line = line.split(" ")
         # ["username", "has", "joined", "(x/y)!"]
@@ -299,7 +245,7 @@ class logMonitor:
         # Save the amount of players in the lobby
         self.playersInLobby = joinNumber
 
-        self.file("Join", "{} ({})".format(name, joinNumber))
+        self.file(CE.join, "{} ({})".format(name, joinNumber))
     
     def whoCommand(self, line: str):
         """Process a who command
@@ -311,15 +257,15 @@ class logMonitor:
             ONLINE: username, username, username, username, ...
 
         Status:
-            Lobby
+            GameLobby
         """
-        self.status = "Lobby"
+        self.status = GS.gameLobby
         line = line.removeprefix("ONLINE: ").split(", ")
         self.playersInLobby = len(line)
         for username in line:
-            self.file("/who", username)
+            self.file(CE.who, username)
             self.queue.add(username, "UNK", -1)
-        self.file("/who:", "{} players in the lobby".format(len(line)))
+        self.file(CE.who, "{} players in the lobby".format(len(line)))
 
     def quitGame(self, line: str):
         """Process a game lobby quit event
@@ -331,9 +277,9 @@ class logMonitor:
             username has quit!
 
         Status:
-            Lobby
+            GameLobby
         """
-        self.status = "Lobby"
+        self.status = GS.gameLobby
 
         # Remove one player from the lobby count
         self.playersInLobby -= 1
@@ -342,7 +288,7 @@ class logMonitor:
         name = line.removesuffix(" has quit!").strip()
         self.queue.delete(name)
 
-        self.file("Quit", "{} ({})".format(name, self.playersInLobby))
+        self.file(CE.quit, "{} ({})".format(name, self.playersInLobby))
 
     def gameTime(self, line: str):
         """Process a game lobby time event
@@ -354,13 +300,13 @@ class logMonitor:
             The game starts in x seconds!
 
         Status:
-            Lobby
+            GameLobby
         """
-        self.status = "Lobby"
+        self.status = GS.gameLobby
 
         time = line.removeprefix("The game starts in").removesuffix("seconds!").strip()
 
-        self.file("Time", time + "s")
+        self.file(CE.time, time + "s")
 
     def newAPIKey(self, line: str):
         """Process a new api key event
@@ -372,10 +318,10 @@ class logMonitor:
             Your new API key is x
 
         Status:
-            Exit
+            MainLobby
         """
 
-        self.status = "Exit"
+        self.status = GS.mainLobby
 
         # Retrieve key
         key = line.removeprefix("Your new API key is ").strip()
@@ -383,15 +329,18 @@ class logMonitor:
         # Store key
         self.newToken = key
 
-        self.file("API", key)
+        self.file(CE.api, key)
 
     def unprocessed(self, line: str):
         """Process an unprocessed message event
 
         Args:
             line (str): Line to process
+
+        Status:
+            unchanged
         """
-        self.file("UNK", line, False)
+        self.file(CE.uncharted, line)
 
     """ Utility """
     def getRank(line: str):
@@ -468,12 +417,14 @@ class logMonitor:
             printLine (bool): If true, prints the line
         """
         message = "[{}] {} | {}: {}".format(
+            
             (6-len(str(self.lineNumber))) * "0" + str(self.lineNumber),
-            self.status + (6 - len(self.status)) * " ",
-            type + (6 - len(type)) * " ",
+            self.status + (GS.maxStatusLength - len(self.status)) * " ",
+            type + (CE.maxEventLength - len(type)) * " ",
             message
         )
         message = message if len(message) < 150 else message[:150].strip() + " (...)"
-        if printLine: print(message)
-        open(self.combinedLog, "a").write(message + "\n")
+        
+        if printLine and (CE.printAll or type in CE.printTypes): print(message)
+        if CE.logAll or type in CE.logTypes: open(self.combinedLog, "a").write(message + "\n")
         

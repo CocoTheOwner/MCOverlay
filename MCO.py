@@ -1,6 +1,6 @@
-from api import API
-from logMonitor import logMonitor
-from config import Config
+from API import API
+from LogMonitor import LogMonitor
+from Config import Config
 import time
 
 # Configs and controller
@@ -18,7 +18,7 @@ controller = Config('./config/controller.json', {
 })
 
 # Create a configuration file logger
-logger = logMonitor(config.get("logFolder"), False)
+logger = LogMonitor(config.get("logFolder"), False)
 
 # Create an API object
 api = API(players.config, config.get("token"))

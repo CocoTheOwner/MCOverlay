@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from config import Config
+from Config import Config
 import json
 from json.decoder import JSONDecodeError
 import requests
