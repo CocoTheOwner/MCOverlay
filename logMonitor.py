@@ -37,6 +37,11 @@ class LogMonitor:
         # Retrieve log file content
         content = open(self.logFilePath, "r").read().splitlines()
 
+        # If the length of the log file is shorter than the linenumber, reset the linenumber
+        if len(content) < self.lineNumber:
+            self.lineNumber = 0
+            if self.debug: print("Reset linenumber. Likely due to Minecraft restarting.")
+
         # Selects log lines that need to be seen
         if self.lineNumber != 0: content = content[self.lineNumber + 1:content.count("\n") + 1]
 
