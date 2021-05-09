@@ -12,10 +12,21 @@ class ChatEvents:
     api = "API"
     all = None
     none = []
+    useful = [
+        quit,
+        join,
+        chat,
+        lobby,
+        who,
+        player,
+        game,
+        time,
+        api
+    ]
 
     maxEventLength = len(lobby)
 
-    printTypes = none
+    printTypes = useful
     logTypes = all
 
     printAll = printTypes == all
