@@ -47,7 +47,7 @@ class API:
             executor.shutdown(True)
         self.uuidsFile.save()
 
-    def getPlayerData(self, player):
+    def getPlayerData(self, player: str):
         """Retrieves player data of a player
         
         Args:
@@ -56,6 +56,8 @@ class API:
 
         """
         try:
+            # Lowercase playername
+            player = player.lower()
 
             # Get UUID from minecraft's API
             uuid = self.minecraft(player)
@@ -65,8 +67,11 @@ class API:
 
             # Get Stats from hypixel's API
             stats = self.hypixel(player, uuid)
-            if stats == None: return None
+            if stats == None: return "NoStats"
             self.stats[uuid] = stats
+
+            # Prevent request throttle
+            time.sleep(0.4)
 
             # Return the statistics
             return stats
@@ -105,9 +110,25 @@ class API:
         if request != None and "player" in request:
             if self.debug: print(player + "'s stats download successful")
             self.stats[uuid] = request["player"]
+            if self.debug: self.verifyPlayername(player, uuid, request["player"]["playername"], request["player"]["uuid"])
             return request["player"]
         elif self.debug and request != None:
             print("Error when getting Stats for {}: {}".format(player, request["cause"] if request != None and "cause" in request else ("Request is 'None'" if request == "None" else request)))
+
+    def verifyPlayername(self, name1, uuid1, name2, uuid2):
+        if name1 not in self.uuids:
+            print("UUID of player entered is somehow not in our list. This should never occur, if it does, something is very broken: {}".format(name1))
+        elif name2 not in self.uuids:
+            print("UUID of playername returned by hypixel not in our list. Likely due to namechange: {}".format(name2))
+        elif name1 != name2:
+            if uuid1 != uuid2:
+                print("UUID of playername returned by Hypixel's API not in our log: Lookup {} / Hypixel {} ({})".format(uuid1, uuid2, name1))
+            elif self.uuids[name1] == self.uuids[name2]:
+                print("Likely detected a playername change: Lookup {} / Hypixel {} (uuid: {})".format(name1, name2, uuid1))
+            else:
+                print("Name used in UUID lookup not the same as returned from Hypixel's API: Lookup {} / Hypixel {} ({})".format(uuid1, uuid2, name1))
+        elif uuid1 != uuid2:
+            print("Player UUID returned by Hypixel's API not the same as used for lookup, somehow: Lookup {} / Hypixel {} ({})".format(uuid1, uuid2, name1))
 
     def minecraft(self, username):
         """Retrieves UUID of a player
