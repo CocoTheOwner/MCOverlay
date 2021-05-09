@@ -62,3 +62,4 @@
 	- [ ] Check stats
 		- [ ] Configurable
 	- [ ] Name mention
+- [ ] Upon open, disregard all entries before that timestamp (set linenumber)
