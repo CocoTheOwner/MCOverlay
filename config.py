@@ -20,7 +20,7 @@ class Config:
         self.config[item] = value
         if save: self.save()
 
-    def getAll(self):
+    def getKeys(self):
         keys = []
         for key in self.config:
             keys.append(key)
@@ -28,27 +28,28 @@ class Config:
 
     def load(self):
         with open(self.configFile, 'r') as f:
-            self.config = json.load(f)
+            x = json.load(f)
+            self.config = x if x != None else {}
 
     def save(self):
         with open(self.configFile, 'w') as f:
             json.dump(self.config, f, ensure_ascii=False, indent=4)
 
     def ensureFileExistNotEmpty(self):
-        if (not path.exists(self.configFile.removesuffix(self.configFile.split("/")[-1]))):
+        if not path.exists(self.configFile.removesuffix(self.configFile.split("/")[-1])):
             os.makedirs(self.configFile.removesuffix(self.configFile.split("/")[-1]))
-        if (not os.path.isfile(self.configFile)):
+        if not os.path.isfile(self.configFile):
             print("Making new config file at: " + self.configFile)
             with open(self.configFile, "w") as f:
                 json.dump(self.defaultConfig, f, ensure_ascii=False, indent=4)
-        elif (os.path.getsize(self.configFile) == 0):
+        elif os.path.getsize(self.configFile) == 0:
             print("Filling existing but empty config file at: " + self.configFile)
             with open(self.configFile, "w") as f:
                 json.dump(self.defaultConfig, f, ensure_ascii=False, indent=4)
     
     def ensureFileValid(self):
         for key in self.defaultConfig:
-            if (not key in self.config):
+            if not key in self.config:
                 print("Key not found: " + key + " in keys: " + str(self.config))
                 print("Invalid configuration file, does not contain all required keys! Resetting")
                 with open(self.configFile.replace(".txt", "-invalid.txt"), "w") as f:
