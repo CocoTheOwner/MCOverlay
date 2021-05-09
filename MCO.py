@@ -11,7 +11,6 @@ config = Config('./config/config.json', {
     "token": "206baa63-dcd2-47f3-b197-b43de4e3301f",
     "logFolder": "C:\\Users\\sjoer\\Appdata\\Roaming\\Minecraft 1.8.9\\logs\\latest.log"
 })
-players = Config('./logs/players.json', {})
 controller = Config('./config/controller.json', {
     "stop": True,
     "lineCap": -1
@@ -21,7 +20,7 @@ controller = Config('./config/controller.json', {
 logger = LogMonitor(config.get("logFolder"), False)
 
 # Create an API object
-api = API(players.config, config.get("token"))
+api = API(config.get("token"), True)
 
 # Main loop
 def startMCO():
@@ -31,21 +30,20 @@ def startMCO():
         # Update cycle number
         cycle += 1
 
-        if (cycle % 100 == 0): print("Cycled 10 seconds")
+        if cycle % 100 == 0: print("Cycled 10 seconds")
 
         # Update logger
         logger.tick()
 
         # Check for token update
         if logger.newToken != None:
-            print("New token: " + logger.newToken)
             api.token = logger.newToken
             config.set("token", logger.newToken)
             config.save()
             logger.newToken = None
 
         # Update player definitions
-        api.fetch(logger.queue.get(), players)
+        api.fetch(logger.queue.get())
 
         # Check controller
         controller.load()
