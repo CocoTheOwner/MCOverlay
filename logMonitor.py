@@ -17,6 +17,12 @@ class LogMonitor:
     lineNumber = 0
     playersInLobby = 0
 
+    autoWho = False
+    autoLeave = False
+
+    resetStats = False
+
+    autoInvite = []
 
     status = GS.unknown
 
@@ -156,6 +162,12 @@ class LogMonitor:
 
         rank = "[" + rank + "] " if rank != "NON" else ""
 
+        for word in message.strip().split(" "):
+            if word in self.mainUsers:
+                # This word mentions one of the main users' usernames, invite this player!
+                self.autoInvite.append(user)
+
+
         self.file(CE.chat, "[{}] {}{}: {}".format(stars, rank, user, message.strip()))
     
     def moveLobby(self, line: str):
@@ -227,6 +239,8 @@ class LogMonitor:
         """
         if self.status == GS.inGame:
             self.status = GS.mainLobby
+            self.autoLeave = True
+            self.resetStats = True
             self.file(CE.game, "Finished")
         else:
             self.status = GS.inGame
@@ -252,6 +266,9 @@ class LogMonitor:
         name = line[0]
         joinNumber = int(line[-1].replace("(","").replace(")!","").split("/")[0])
 
+        if joinNumber > 1:
+            self.autoWho = True
+
         # Store player by username
         self.queue.add(name, "UNK", -1)
 
@@ -275,6 +292,7 @@ class LogMonitor:
         self.status = GS.gameLobby
         line = line.removeprefix("ONLINE: ").split(", ")
         self.playersInLobby = len(line)
+        self.resetStats = True
         for username in line:
             self.file(CE.who, username)
             self.queue.add(username, "UNK", -1)
