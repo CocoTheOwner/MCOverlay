@@ -27,7 +27,7 @@ class PlayerQueue:
         
         """
         for i,element in enumerate(self.queue):
-            if (element[0] == name):
+            if element[0] == name:
                 del self.queue[i]
         self.updateEmpty()
 
