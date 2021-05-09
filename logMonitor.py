@@ -1,9 +1,11 @@
-import os.path
+import os
 from ChatEvents import ChatEvents as CE, GameStatus as GS
 from PlayerQueue import PlayerQueue
 class LogMonitor:
 
-    combinedLog = "./logs/combined.txt"
+    combinedLog = "./logs/combined.txt"    
+    if not os.path.exists("/".join(combinedLog.split("/")[:-1])):
+        os.makedirs("/".join(combinedLog.split("/")[:-1]))
     open(combinedLog, "w").close() # Reset file
 
     lobbyName = None
