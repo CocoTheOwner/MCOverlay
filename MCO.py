@@ -13,14 +13,17 @@ config = Config('./config/config.json', {
 })
 controller = Config('./config/controller.json', {
     "stop": True,
-    "lineCap": -1
+    "getAPI": True
 })
 
 # Create a configuration file logger
 logger = LogMonitor(config.get("logFolder"), False)
 
 # Create an API object
-api = API(config.get("token"), True)
+api = API(config.get("token"), False)
+# Print API uptime info
+stats = api.hypixel_stats()
+print(stats if stats != None else "No stats were found... Is the API down?")
 
 # Main loop
 def startMCO():
@@ -47,9 +50,17 @@ def startMCO():
 
         # Check controller
         controller.load()
-        lc = controller.get("lineCap")
-        if controller.get("stop") or (lc != -1 and logger.actualLineNumber >= lc):
+        if controller.get("stop"):
+            controller.set("stop", False)
+            controller.save()
             break
+        if controller.get("getAPI"):
+            controller.set("getAPI", False)
+            controller.save()
+            stats = api.hypixel_stats()
+            print(stats if stats != None else "No stats were found... Is the API down?")
+
+        
 
         time.sleep(0.1)
     exit()
