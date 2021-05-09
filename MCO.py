@@ -12,15 +12,15 @@ config = Config('./config/config.json', {
     "logFolder": "C:\\Users\\sjoer\\Appdata\\Roaming\\Minecraft 1.8.9\\logs\\latest.log"
 })
 controller = Config('./config/controller.json', {
-    "stop": True,
-    "getAPI": True
+    "stop": False,
+    "getAPI": False
 })
 
 # Create a configuration file logger
 logger = LogMonitor(config.get("logFolder"), False)
 
 # Create an API object
-api = API(config.get("token"), False)
+api = API(config.get("token"), True)
 # Print API uptime info
 stats = api.hypixel_stats()
 print(stats if stats != None else "No stats were found... Is the API down?")

@@ -1,4 +1,6 @@
+import re
 import time, json, requests
+from requests.models import Response
 from Config import Config
 from json.decoder import JSONDecodeError
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -90,8 +92,10 @@ class API:
             None if failed, record with information if successful
         """
         request = self.getRequest("https://api.hypixel.net/key?key={}".format(self.token))
-        if request == None or request["success"] != "true":
+        if request == None:
             return None
+        elif request["success"] != True:
+            return "Response not successful: {}".format(request)
         else:
             return request["record"]
 
