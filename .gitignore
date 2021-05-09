@@ -3,6 +3,7 @@ __pycache__
 # Configuration and log folder
 config
 logs
+cache
 
 # Test file
 test.py
