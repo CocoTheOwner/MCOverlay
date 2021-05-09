@@ -20,20 +20,20 @@ controller = Config('./config/controller.json', {
 logger = LogMonitor(config.get("logFolder"), True)
 
 # Create an API object
-api = API(config.get("token"), False)
+api = API(config.get("token"), True)
 # Print API uptime info
-stats = api.hypixel_stats()
-print(stats if stats != None else "No stats were found... Is the API down?")
+print(api.getApiStatus())
 
 # Main loop
 def startMCO():
     cycle = 0
     while True:
 
-        # Update cycle number
-        cycle += 1
+        # Update cycle number (1 per second)
+        cycle += 0.1
 
-        if cycle % 100 == 0: print("Cycled 10 seconds")
+        if cycle % 60 == 0:
+            print(api.getApiStatus())
 
         # Update logger
         logger.tick()
@@ -57,7 +57,7 @@ def startMCO():
         if controller.get("getAPI"):
             controller.set("getAPI", False)
             controller.save()
-            stats = api.hypixel_stats()
+            stats = api.getApiStatus()
             print(stats if stats != None else "No stats were found... Is the API down?")
 
         

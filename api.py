@@ -85,19 +85,34 @@ class API:
             print("An unhandled exception was raised for player: {}\nError: {}".format(player, str(type(e))))
             raise e
 
-    def hypixel_stats(self):
+    def getApiStatus(self):
+        return self.minecraftStats() + "\n" + self.hypixelStats()
+
+    def hypixelStats(self):
         """Retrieve hypixel API server information
 
         Returns:
-            None if failed, record with information if successful
+            Information message (str)
         """
         request = self.getRequest("https://api.hypixel.net/key?key={}".format(self.token))
         if request == None:
-            return None
+            return "Hypixel API: OFFLINE (no response)"
         elif request["success"] != True:
-            return "Response not successful: {}".format(request)
+            return "Hypixel API: UNRESPONSIVE (response not successful: {})".format(request)
         else:
-            return request["record"]
+            return "Hypixel API: ONLINE (requests: {}/{} per 60s. {} in total)".format(request["record"]["queriesInPastMin"], request["record"]["limit"], request["record"]["totalQueries"])
+
+    def minecraftStats(self):
+        """Retrieves stats of minecraft API
+
+        Returns:
+            Information message (str)
+        """
+        request = self.getRequest("https://api.mojang.com/")
+        if request == None:
+            return "Minecraft API: OFFLIN (no response)"
+        else:
+            return "Minecraft API: ONLINE (version: {})".format(request["Implementation-Version"])
 
     def hypixel(self, player, uuid):
         """Retrieves stats of player with uuid
