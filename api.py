@@ -1,45 +1,60 @@
-# -*- coding: utf-8 -*-
+import time
 from Config import Config
 import json
 from json.decoder import JSONDecodeError
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from fake_useragent import UserAgent
+
 ua = UserAgent()
 """Module for retrieving data from several preset API pages"""
 class API:
-    players = {}
     token = ""
     debug = False
 
+    uuidsFile = Config("./cache/uuids.json", {})
+    statsFile = Config("./cache/stats.json", {})
+    uuidsFile.load()
+    statsFile.load()
+
+    uuids = uuidsFile.config
+    stats = statsFile.config
+
     # TODO: Queue party and self for statistics refresh when requested
 
-    def __init__(self, players: dict, token: str, debug = False):
-        self.players = players
+    def __init__(self, token: str, debug = False):
         self.token = token
         self.debug = debug
 
-    def fetch(self, playerQueue, file: Config):
+    def fetch(self, playerQueue):
         """Fetches all player data from a queue
 
         Args:
             playerQueue (dict): Queue of players to get stats of
-            file (Config): Configuration file to write results to and take existing results from
 
         """
+        if not self.getRequest("https://api.mojang.com/")["Status"] == "OK":
+            print("Minecraft API is down!")
+            return
         threads = []
         with ThreadPoolExecutor(max_workers=50) as executor:
             count = 0
             total = len(playerQueue)
             for player in playerQueue:
                 count += 1
-                threads.append(executor.submit(self.getPlayerData, player, file))
+                threads.append(executor.submit(self.getPlayerData, player))
 
             for task in as_completed(threads):
-                if (self.debug): print("Completed task ({}/{}) | Result: {}".format(total - count, total, str(task.result())))
+                if self.debug and (total-count)%10==0: print("Completed task ({}/{}) | Result: {}".format(total - count, total, str(task.result())))
                 count -= 1
+                
+            executor.shutdown(True)
+        time.sleep(10)
+        self.uuidsFile.save()
+        self.statsFile.save()
+        
 
-    def getPlayerData(self, player, file: Config):
+    def getPlayerData(self, player):
         """Retrieves player data of a player
         
         Args:
@@ -48,17 +63,27 @@ class API:
 
         """
         try:
+
+            # Get UUID from minecraft's API
             uuid = self.minecraft(player)
-            file.set(player, uuid)
-            if (uuid == None): return None
+            if uuid == None: return "NoneUUID"
+            if uuid == "NICK": return "NICK"
+            self.uuidsFile.set(player, uuid)
+
+            # Get Stats from hypixel's API
             stats = self.hypixel(player, uuid)
-            file.set(uuid, stats)
+            if stats == None: return None
+            self.statsFile.set(uuid, stats)
+
+            # Return the statistics
             return stats
+
         except requests.exceptions.RequestException as e:
             print("Failed player fetch for " + player)
-            return e
-        finally:
-            if (self.debug): print("Completed data retrieval for " + player)
+            raise e
+        except Exception as e:
+            print("An unhandled exception was raised for player: " + player)
+            raise 
 
     def hypixel_stats(self):
         """Retrieve hypixel API server information
@@ -66,7 +91,7 @@ class API:
         Returns:
             None if failed, record with information if successful
         """
-        request = API.getRequest("https://api.hypixel.net/key?key={}".format(self.token))
+        request = self.getRequest("https://api.hypixel.net/key?key={}".format(self.token))
         if request == None or request["success"] != "true":
             return None
         else:
@@ -82,16 +107,14 @@ class API:
         Returns:
             None if failed, dict with data if successful
         """
-        #if (self.debug): print("Downloading stats of {} ({})".format(player, uuid))
-        #print("Downloading stats of {} ({})".format(player, uuid))
-        request = API.getRequest("https://api.hypixel.net/player?key={}&uuid={}".format(self.token, uuid))
-        if request == None or request["success"] != "true":
-            self.players[uuid] = player
-            return None
-        else:
-            print("{}'s stats download successful".format(player))
-            self.players[uuid] = request["player"]
+        if self.debug: print("Downloading stats of {} ({})".format(player, uuid))
+        request = self.getRequest("https://api.hypixel.net/player?key={}&uuid={}".format(self.token, uuid))
+        if request != None and "player" in request:
+            if self.debug: print(player + "'s stats download successful")
+            self.stats[uuid] = request["player"]
             return request["player"]
+        elif self.debug and request != None:
+            print("Error when getting Stats for {}: {}".format(player, request["cause"] if request != None and "cause" in request else ("Request is 'None'" if request == "None" else request)))
 
     def minecraft(self, username):
         """Retrieves UUID of a player
@@ -103,24 +126,21 @@ class API:
             UUID string
 
         """
-
         # Prevent loading same username twice
-        if (username in self.players):
-            if type(self.players[username]) == str:
-                return self.players[username]
-            elif type(self.players[username]) == dict:
-                return self.players[username]["uuid"]
+        if username in self.uuids:
+            return self.uuids[username]
         
         # Get UUID from server
-        if (self.debug): print("Downloading UUID of {}".format(username))
-        request = API.getRequest("https://api.mojang.com/users/profiles/minecraft/" + username)
-        if request != None:
-            self.players[username] = request["id"]
+        #if self.debug: print("Downloading UUID of {}".format(username))
+        request = self.getRequest("https://api.mojang.com/users/profiles/minecraft/" + username)
+        if request != None and not 'error' in request:
+            self.uuids[username] = request["id"]
             return request["id"] 
         else:
-            return 0
+            self.uuids[username] = "NICK"
+            return "NICK"
 
-    def getRequest(link):
+    def getRequest(self, link):
         """Retrieves request from webpage
 
         Args:
@@ -130,13 +150,8 @@ class API:
             None if failed, content of webpage get if successful
         
         """
-        content = None
-
+        request = requests.get(link, headers={'User-Agent':str(ua.random), "Connection": "close"}).content
         try:
-            content = json.loads(requests.get(link, headers={'User-Agent':str(ua.random), "Connection": "close"}).content)
+            return json.loads(request)
         except JSONDecodeError as e:
-            print("Failed to request from {} because of JSON Decode Error. Likely due to invalid link or no connection.".format(e))
-        except Exception as e:
-            print("Failed to request from {} because of an Exception:\n{}".format(link, e))
-
-        return content
+            if self.debug: print("Failed to request from {} because of JSON Decode Error. Likely due to invalid link or no connection.\nLink: {}\nReturned: {}".format(e, link, request))
