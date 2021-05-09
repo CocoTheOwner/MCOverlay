@@ -25,7 +25,7 @@ class LogMonitor:
     def tick(self):
         """Ticks the logger. Only ticks if there is a log change.
         """
-        if (self.modificationTime != os.path.getmtime(self.logFilePath)):
+        if self.modificationTime != os.path.getmtime(self.logFilePath):
             self.modificationTime = os.path.getmtime(self.logFilePath)
             self.readlog()
 
@@ -36,7 +36,7 @@ class LogMonitor:
         content = open(self.logFilePath, "r").read().splitlines()
 
         # Selects log lines that need to be seen
-        if (self.lineNumber != 0): content = content[self.lineNumber + 1:content.count("\n") + 1]
+        if self.lineNumber != 0: content = content[self.lineNumber + 1:content.count("\n") + 1]
 
         # Loops over all lines in reversed order
         for line in content:
@@ -63,9 +63,9 @@ class LogMonitor:
             line (str): Cleaned line or None (if the line was rejected)
 
         """
-        if (line.count("[Client thread/INFO]: [CHAT]") != 0): 
+        if line.count("[Client thread/INFO]: [CHAT]") != 0: 
             split = line.strip().split("[Client thread/INFO]: [CHAT]")[1].strip()
-            if (split != ""):
+            if split != "":
                 return split
             self.file(CE.removed, line)
         return None
@@ -77,25 +77,25 @@ class LogMonitor:
             line (str): The line to process
         
         """
-        if (line.startswith("[") and line.split(" ")[0].endswith("?]") and (line.split(" ")[1].endswith(":") or line.split(" ")[2].endswith(":")) and line.count(" ") > 1):
+        if line.startswith("[") and line.split(" ")[0].endswith("?]") and (line.split(" ")[1].endswith(":") or line.split(" ")[2].endswith(":")) and line.count(" ") > 1:
             self.lobbyChatMessage(line)
-        elif (line.startswith("You are currently connected to server ") or line.startswith("Sending you to") or line.startswith("Taking you to")):
+        elif line.startswith("You are currently connected to server ") or line.startswith("Sending you to") or line.startswith("Taking you to"):
             self.moveLobby(line)
-        elif (line == "Bed Wars"):
+        elif line == "Bed Wars":
             self.endGame()
-        elif (line.count("joined the lobby!") > 0):
+        elif line.count("joined the lobby!") > 0:
             self.joinLobby(line)
-        elif (line.count("has joined") > 0):
+        elif line.count("has joined") > 0:
             self.playerJoinGame(line)
-        elif (line.startswith("ONLINE:")):
+        elif line.startswith("ONLINE:"):
             self.whoCommand(line)
-        elif (line.endswith("has quit!")):
+        elif line.endswith("has quit!"):
             self.quitGame(line)
-        elif (line.startswith("The game starts in") and line.count("second") > 0):
+        elif line.startswith("The game starts in") and line.count("second") > 0:
             self.gameTime(line)
-        elif (line == "We don't have enough players! Start cancelled."):
+        elif line == "We don't have enough players! Start cancelled.":
             self.file("Game", "Start cancelled")
-        elif (line.startswith("Your new API key is ")):
+        elif line.startswith("Your new API key is "):
             self.newAPIKey(line)
         else:
             self.unprocessed(line)
@@ -167,7 +167,7 @@ class LogMonitor:
         name = line.removeprefix("You are currently connected to server").removeprefix("Sending you to").removeprefix("Taking you to").strip().split(' ')[0]
 
         # Set the lobby name if changed
-        if (name != self.lobbyName):
+        if name != self.lobbyName:
             self.file(CE.lobby, "[{}] -> [{}]".format(self.lobbyName, name))
             self.playersInLobby = 0
             self.lobbyName = name
@@ -355,23 +355,23 @@ class LogMonitor:
             VIP, VIP+, MVP, MVP+, MVP++, Helper, Admin, YOUTUBE, Owner or NON
 
         """
-        if (line.__contains__("[VIP]")):
+        if line.__contains__("[VIP]"):
             return "VIP"
-        if (line.__contains__("[VIP+]")):
+        if line.__contains__("[VIP+]"):
             return "VIP+"
-        if (line.__contains__("[MVP]")):
+        if line.__contains__("[MVP]"):
             return "MVP"
-        if (line.__contains__("[MVP+]")):
+        if line.__contains__("[MVP+]"):
             return "MVP+"
-        if (line.__contains__("[MVP++]")):
+        if line.__contains__("[MVP++]"):
             return "MVP++"
-        if (line.__contains__("[Helper]")):
+        if line.__contains__("[Helper]"):
             return "Helper"
-        if (line.__contains__("[YOUTUBE]")):
+        if line.__contains__("[YOUTUBE]"):
             return "YOUTUBE"
-        if (line.__contains__("[Admin]")):
+        if line.__contains__("[Admin]"):
             return "Admin"
-        if (line.__contains__("[Owner]")):
+        if line.__contains__("[Owner]"):
             return "Owner"
         return "NON"
 
@@ -385,27 +385,27 @@ class LogMonitor:
             bool: True if useful, false if not.
 
         """
-        if (line == ""): return False
-        if (line == "[WATCHDOG ANNOUNCEMENT]"): return False
-        if (line == "This server is full! (Server closed)"): return False
-        if (line == "A player has been removed from your lobby."): return False
-        if (line == "You were kicked while joining that server!"): return False
-        if (line == "Use /report to continue helping out the server!"): return False
-        if (line == "Blacklisted modifications are a bannable offense!"): return False
-        if (line == "You already have an API Key, are you sure you want to regenerate it?"): return False
+        if line == "": return False
+        if line == "[WATCHDOG ANNOUNCEMENT]": return False
+        if line == "This server is full! (Server closed)": return False
+        if line == "A player has been removed from your lobby.": return False
+        if line == "You were kicked while joining that server!": return False
+        if line == "Use /report to continue helping out the server!": return False
+        if line == "Blacklisted modifications are a bannable offense!": return False
+        if line == "You already have an API Key, are you sure you want to regenerate it?": return False
 
-        if (line.replace("?","") == ""): return False
-        if (line.replace("-","") == ""): return False
-        if (line.count("Guild > ") > 0): return False
-        if (line.count("Friend > ") > 0): return False
-        if (line.count("You are AFK") > 0): return False
-        if (line.count("You purchased") > 0): return False
-        if (line.count("Unknown command. Type \"help\" for help.") > 0): return False
-        if (line.count("[Mystery Box]") > 0 and line.count("found") > 0): return False
-        if (line.count("You tipped") > 0 and line.count("players!") > 0): return False
-        if (line.count("found a") > 0 and line.count("Mystery Box!") > 0): return False
-        if (line.count("Watchdog has banned") > 0 and line.count("players in the last") > 0): return False
-        if (line.count("Staff have banned an additional") > 0 and line.count("in the last") > 0): return False
+        if line.replace("?","") == "": return False
+        if line.replace("-","") == "": return False
+        if line.count("Guild > ") > 0: return False
+        if line.count("Friend > ") > 0: return False
+        if line.count("You are AFK") > 0: return False
+        if line.count("You purchased") > 0: return False
+        if line.count("Unknown command. Type \"help\" for help.") > 0: return False
+        if line.count("[Mystery Box]") > 0 and line.count("found") > 0: return False
+        if line.count("You tipped") > 0 and line.count("players!") > 0: return False
+        if line.count("found a") > 0 and line.count("Mystery Box!") > 0: return False
+        if line.count("Watchdog has banned") > 0 and line.count("players in the last") > 0: return False
+        if line.count("Staff have banned an additional") > 0 and line.count("in the last") > 0: return False
         return True
 
     def file(self, type: str, message: str, printLine = True):
