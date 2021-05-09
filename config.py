@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from os import path
 class Config:
     configFile = "./config/config.txt"
@@ -54,6 +55,7 @@ class Config:
                 print("Invalid configuration file, does not contain all required keys! Resetting")
                 with open(self.configFile.replace(".txt", "-invalid.txt"), "w") as f:
                     json.dump(self.config, f, ensure_ascii=False, indent=4)
+                time.sleep(0.1)
                 with open(self.configFile, "w") as f:
                     json.dump(self.defaultConfig, f, ensure_ascii=False, indent=4)
                 break

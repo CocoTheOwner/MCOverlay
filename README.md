@@ -42,7 +42,9 @@
 	- [ ] Check stats
 		- [ ] Configurable
 	- [X] Name mention
-
+- [ ] API Request counter and overload blocker
+	- [ ] Hypixel
+	- [ ] Minecraft
 ## Completed tasks
 - [ ] Upon open, disregard all entries before that timestamp (set linenumber)
 - [X] Autoleave+pwarp after game
