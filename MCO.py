@@ -17,7 +17,7 @@ controller = Config('./config/controller.json', {
 })
 
 # Create a configuration file logger
-logger = LogMonitor(config.get("logFolder"), True)
+logger = LogMonitor(config.get("logFolder"), config.get("ownUsers"), True)
 
 # Create an API object
 api = API(config.get("token"), True)
