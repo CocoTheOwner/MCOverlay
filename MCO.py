@@ -1,5 +1,6 @@
 from API import API
 from LogMonitor import LogMonitor
+from CommandSender import CommandSender as CS
 from Config import Config
 import time
 
@@ -9,7 +10,11 @@ config = Config('./config/config.json', {
         "cocodef9"
     ],
     "token": "206baa63-dcd2-47f3-b197-b43de4e3301f",
-    "logFolder": "C:\\Users\\sjoer\\Appdata\\Roaming\\Minecraft 1.8.9\\logs\\latest.log"
+    "logFolder": "C:\\Users\\sjoer\\Appdata\\Roaming\\Minecraft 1.8.9\\logs\\latest.log",
+    "autoWho": False,
+    "autoInvite": False,
+    "autoLeave": True,
+    "autoPWarp": True
 })
 controller = Config('./config/controller.json', {
     "stop": False,
@@ -44,6 +49,36 @@ def startMCO():
             config.set("token", logger.newToken)
             config.save()
             logger.newToken = None
+
+        # Check for autowho
+        if logger.autoWho:
+            logger.autoWho = False
+            if config.get("autoWho"): CS.who()
+
+        # Check for autoleave
+        if logger.autoLeave:
+            logger.autoLeave = False
+            if config.get("autoLeave"): 
+                CS.leave()
+                if config.get("autoPWarp"):
+                    time.sleep(0.1)
+                    CS.pwarp()
+            elif config.get("autoPWarp"):
+                CS.pwarp()
+            
+        # Check for stats reset (/who)
+        if logger.resetStats:
+            logger.resetStats = False
+            # TODO: Reset stats of players gathered once system in place
+
+        # Check for autoinvite
+        if len(logger.autoInvite) > 0:
+            inv = logger.autoInvite.copy()
+            logger.autoInvite = []
+            if config.get("autoInvite"):
+                for player in inv:
+                    print("Autoinvite {}?".format(player))
+                    #TODO: Add auto statistics check and invite
 
         # Update player definitions
         api.fetch(logger.queue.get())
