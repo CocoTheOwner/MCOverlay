@@ -186,9 +186,10 @@ class LogMonitor:
         rank = "[" + rank + "] " if rank != "NON" else ""
 
         for word in message.strip().split(" "):
-            if word in self.mainUsers:
-                # This word mentions one of the main users' usernames, invite this player!
-                self.autoInvite.append(user)
+            for player in self.mainUsers:
+                if word.count(player) > 0:
+                    # This word mentions one of the main users' usernames, invite this player!
+                    self.autoInvite.append(user)
 
 
         self.file(CE.chat, "[{}] {}{}: {}".format(stars, rank, user, message.strip()))
