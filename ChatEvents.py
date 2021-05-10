@@ -50,7 +50,7 @@ class ChatEvents:
 
     maxEventLength = len(lobby)
 
-    printTypes = uncharted
+    printTypes = useful
     logTypes = all
 
     printAll = printTypes == all
