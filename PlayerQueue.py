@@ -31,7 +31,7 @@ class PlayerQueue:
                 del self.queue[i]
         self.updateEmpty()
 
-    def add(self, name: str, rank: str, stars: int):
+    def add(self, name: str, rank = "UNK", stars = -1):
         """Adds a player to the playerqueue by name, rank and stars
 
         Args:
