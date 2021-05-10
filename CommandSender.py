@@ -24,6 +24,7 @@ class CommandSender:
         Args:
             line (str): The line to write
         """
+        controller.release(Key.shift)
         controller.press("t")
         controller.release("t")
         time.sleep(0.05)
