@@ -441,8 +441,8 @@ class LogMonitor:
         joinNumber = int(x[0])
         lobbyCap = int(x[1])
 
-        if joinNumber > 1:
-            self.autoWho = True
+        if name in self.mainUsers and joinNumber > 1:
+                self.autoWho = True
 
         # Store player by username
         self.queue.add(name, "UNK", -1)
