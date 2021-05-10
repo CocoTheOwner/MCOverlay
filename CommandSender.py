@@ -33,9 +33,3 @@ class CommandSender:
             time.sleep(0.01)
         controller.press(Key.enter)
         controller.release(Key.enter)
-
-if __name__ == "__main__":
-    s = 2
-    print("Sending keypress in {}s".format(s))
-    time.sleep(s)
-    CommandSender.who()
