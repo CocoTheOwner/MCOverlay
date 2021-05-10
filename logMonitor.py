@@ -16,6 +16,7 @@ class LogMonitor:
     modificationTime = 0
     lineNumber = 0
     playersInLobby = 0
+    lobbyCap = 0
 
     autoWho = False
     autoLeave = False
@@ -215,9 +216,8 @@ class LogMonitor:
 
         # Set the lobby name if changed
         if name != self.lobbyName:
-            self.file(CE.lobby, "[{}] -> [{}]".format(self.lobbyName, name))
-            self.playersInLobby = 0
             self.lobbyName = name
+            self.file(CE.lobby, "[{}] -> [{}]".format(self.lobbyName, name))
 
     def voided(self, line: str):
         """Process a fell in the void event
@@ -329,7 +329,7 @@ class LogMonitor:
         if len(x) == 1:
             self.file(CE.party, "Your party member: " + x[0] + " disconnected!")
         else:
-            self.file(CE.party, "Your party member: " + x[0] + x[1] + " disconnected!")
+            self.file(CE.party, "Your party member: " + x[0] + " " + x[1] + " disconnected!")
 
     def selfDied(self):
         """Process player death
@@ -363,7 +363,7 @@ class LogMonitor:
             rank1 = ""
         else:
             name1 = line[1]
-            rank1 = x + " "
+            rank1 = "[" + x + "] "
 
         if name1 in self.mainUsers:
             name1 = "You"
@@ -371,7 +371,7 @@ class LogMonitor:
 
         name2 = line[-1]
         x = LogMonitor.getRank(line[-2])
-        rank2 = "" if x == "NON" else x + " "
+        rank2 = "" if x == "NON" else "[" + x + "] "
 
         self.file(CE.party, "{}{} invited {}{}".format(rank1, name1, rank2, name2))
 
@@ -394,7 +394,7 @@ class LogMonitor:
             rank = ""
         else:
             name = line.split(" ")[1]
-            rank = x + " "
+            rank = "[" + x + "] "
 
         self.file(CE.party, "{}{} joined the party".format(rank, name))
 
@@ -436,7 +436,9 @@ class LogMonitor:
         # ["username", "has", "joined", "(x/y)!"]
 
         name = line[0]
-        joinNumber = int(line[-1].replace("(","").replace(")!","").split("/")[0])
+        x = line[-1].replace("(","").replace(")!","").split("/")
+        joinNumber = int(x[0])
+        lobbyCap = int(x[1])
 
         if joinNumber > 1:
             self.autoWho = True
@@ -446,8 +448,9 @@ class LogMonitor:
 
         # Save the amount of players in the lobby
         self.playersInLobby = joinNumber
+        self.lobbyCap = lobbyCap
 
-        self.file(CE.join, "{} ({})".format(name, joinNumber))
+        self.file(CE.join, "{} ({}/{})".format(name, joinNumber, lobbyCap))
 
     def playerRejoinGame(self, line: str):
         """Process a player game lobby rejoin event
@@ -484,7 +487,7 @@ class LogMonitor:
         for username in line:
             self.file(CE.who, username)
             self.queue.add(username, "UNK", -1)
-        self.file(CE.who, "{} players in the lobby".format(len(line)))
+        self.file(CE.who, "({}/{}) players in the lobby".format(len(line), self.lobbyCap))
 
     def afk(self):
         """Process an afk event
@@ -496,6 +499,7 @@ class LogMonitor:
             afk
         """
         self.status = GS.afk
+        self.file(CE.afk, "You went AFK")
 
     def quitGame(self, line: str):
         """Process a game lobby quit event
@@ -508,9 +512,8 @@ class LogMonitor:
             username has disconnected
 
         Status:
-            GameLobby
+            unchanged
         """
-        self.status = GS.gameLobby
 
         # Remove one player from the lobby count
         self.playersInLobby -= 1
@@ -520,7 +523,7 @@ class LogMonitor:
         self.queue.delete(name)
         self.left.add(name, "UNK", -1)
 
-        self.file(CE.quit, "{} ({})".format(name, self.playersInLobby))
+        self.file(CE.quit, "{} ({}/{})".format(name, self.playersInLobby, self.lobbyCap))
 
     def gameTime(self, line: str):
         """Process a game lobby time event
@@ -536,7 +539,7 @@ class LogMonitor:
         """
         self.status = GS.gameLobby
 
-        time = line.removeprefix("The game starts in").removesuffix("seconds!").strip()
+        time = line.removeprefix("The game starts in").removesuffix("!").removesuffix("s").removesuffix("second").strip()
 
         self.file(CE.time, time + "s")
 

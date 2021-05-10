@@ -15,6 +15,7 @@ class ChatEvents:
     eliminated = "Elim"
     party = "Party"
     died = "Death"
+    afk = "AFK"
     all = None
     none = []
     useful = [
@@ -31,7 +32,20 @@ class ChatEvents:
         bed,
         eliminated,
         party,
-        died
+        died,
+        afk
+    ]
+    system = [
+        quit,
+        join,
+        lobby,
+        who,
+        player,
+        game,
+        time,
+        api,
+        party,
+        afk
     ]
 
     maxEventLength = len(lobby)
