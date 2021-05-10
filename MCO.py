@@ -63,10 +63,11 @@ def startMCO():
         # Check for autoleave
         if logger.autoLeave:
             logger.autoLeave = False
+            time.sleep(2)
             if config.get("autoLeave"): 
                 CS.leave()
                 if config.get("autoPWarp"):
-                    time.sleep(0.1)
+                    time.sleep(0.5)
                     CS.pwarp()
             elif config.get("autoPWarp"):
                 CS.pwarp()
@@ -76,7 +77,7 @@ def startMCO():
             logger.autoLeavePartyLeave = False
             if config.get("autoLeavePartyDC"):
                 CS.leave()
-                time.sleep(0.1)
+                time.sleep(0.25)
                 CS.pwarp()
             
         # Check for stats reset (/who)
@@ -91,7 +92,6 @@ def startMCO():
             if config.get("autoInvite"):
                 for player in inv:
                     CS.type("/p " + player)
-                    print("Autoinvite {}?".format(player))
                     #TODO: Add auto statistics check and invite
 
         # Update player definitions
