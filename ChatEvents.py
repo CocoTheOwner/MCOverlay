@@ -10,6 +10,11 @@ class ChatEvents:
     game = "Game"
     time = "Time"
     api = "API"
+    void = "Void"
+    bed = "Bed"
+    eliminated = "Elim"
+    party = "Party"
+    died = "Death"
     all = None
     none = []
     useful = [
@@ -21,12 +26,17 @@ class ChatEvents:
         player,
         game,
         time,
-        api
+        api,
+        void,
+        bed,
+        eliminated,
+        party,
+        died
     ]
 
     maxEventLength = len(lobby)
 
-    printTypes = all
+    printTypes = uncharted
     logTypes = all
 
     printAll = printTypes == all
@@ -37,4 +47,5 @@ class GameStatus:
     gameLobby = "GameLobby"
     mainLobby = "MainLobby"
     unknown = "Unknown"
+    afk = "AFK"
     maxStatusLength = len(gameLobby)
