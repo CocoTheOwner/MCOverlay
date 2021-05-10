@@ -14,7 +14,8 @@ config = Config('./config/config.json', {
     "autoWho": False,
     "autoInvite": False,
     "autoLeave": True,
-    "autoPWarp": True
+    "autoPWarp": True,
+    "enableStatistics-Do-Not-Disable!": True
 })
 controller = Config('./config/controller.json', {
     "stop": False,
@@ -81,7 +82,8 @@ def startMCO():
                     #TODO: Add auto statistics check and invite
 
         # Update player definitions
-        api.fetch(logger.queue.get())
+        if config.get("enableStatistics-Do-Not-Disable!"):
+            api.fetch(logger.queue.get())
 
         # Check controller
         controller.load()
