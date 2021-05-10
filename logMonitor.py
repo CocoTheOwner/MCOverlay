@@ -525,6 +525,10 @@ class LogMonitor:
 
         self.file(CE.quit, "{} ({}/{})".format(name, self.playersInLobby, self.lobbyCap))
 
+        if name in self.mainUsers:
+            self.file(CE.lobby, "Left lobby [{}]".format(self.lobbyName))
+
+
     def gameTime(self, line: str):
         """Process a game lobby time event
 
