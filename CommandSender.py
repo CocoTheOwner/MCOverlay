@@ -1,5 +1,5 @@
-from pynput import keyboard
 from pynput.keyboard import Key, Controller
+import pyperclip
 import time
 controller = Controller()
 class CommandSender:
@@ -24,13 +24,17 @@ class CommandSender:
         Args:
             line (str): The line to write
         """
+        print("Sending command: {}".format(line))
+        pyperclip.copy(line)
         controller.release(Key.shift)
         controller.press("t")
         controller.release("t")
         time.sleep(0.05)
-        for character in line:
-            controller.press(character)
-            controller.release(character)
-            time.sleep(0.01)
+        controller.press(Key.ctrl)
+        controller.press("v")
+        time.sleep(0.05)
+        controller.release(Key.ctrl)
+        controller.release("v")
+        time.sleep(0.05)
         controller.press(Key.enter)
         controller.release(Key.enter)
