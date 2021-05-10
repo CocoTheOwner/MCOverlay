@@ -31,6 +31,9 @@ api = API(config.get("token"), True)
 # Print API uptime info
 print(api.getApiStatus())
 
+# TODO: Add to GUI
+autoInviteToggle = True
+
 # Main loop
 def startMCO():
     cycle = 0
@@ -82,7 +85,7 @@ def startMCO():
             # TODO: Reset stats of players gathered once system in place
 
         # Check for autoinvite
-        if len(logger.autoInvite) > 0:
+        if len(logger.autoInvite) > 0 and autoInviteToggle:
             inv = logger.autoInvite.copy()
             logger.autoInvite = []
             if config.get("autoInvite"):

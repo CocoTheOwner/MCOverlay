@@ -310,7 +310,7 @@ class LogMonitor:
         self.file(CE.eliminated, team + " eliminated!")
         
 
-    def teamEliminated(self, line:str):
+    def partyMemberLeft(self, line:str):
         """Process a party member leave event
 
         Args:
