@@ -15,6 +15,7 @@ config = Config('./config/config.json', {
     "autoInvite": False,
     "autoLeave": True,
     "autoPWarp": True,
+    "autoLeavePartyDC": True,
     "enableStatistics-Do-Not-Disable!": True
 })
 controller = Config('./config/controller.json', {
@@ -65,6 +66,14 @@ def startMCO():
                     time.sleep(0.1)
                     CS.pwarp()
             elif config.get("autoPWarp"):
+                CS.pwarp()
+
+        # Check for party member DC
+        if logger.autoLeavePartyLeave:
+            logger.autoLeavePartyLeave = False
+            if config.get("autoLeavePartyDC"):
+                CS.leave()
+                time.sleep(0.1)
                 CS.pwarp()
             
         # Check for stats reset (/who)
