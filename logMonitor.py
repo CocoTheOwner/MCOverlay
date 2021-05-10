@@ -19,6 +19,7 @@ class LogMonitor:
 
     autoWho = False
     autoLeave = False
+    autoLeavePartyLeave = False
 
     resetStats = False
 
@@ -27,6 +28,7 @@ class LogMonitor:
     status = GS.unknown
 
     queue = PlayerQueue()
+    left = PlayerQueue()
 
     def __init__(self, logFilePath: str, mainUsers, debug = False):
         self.logFilePath = logFilePath
@@ -96,15 +98,33 @@ class LogMonitor:
             self.lobbyChatMessage(line)
         elif line.startswith("You are currently connected to server ") or line.startswith("Sending you to") or line.startswith("Taking you to"):
             self.moveLobby(line)
+        elif line.endswith("fell into the void."):
+            self.voided(line)
+        elif line.startswith("BED DESTRUCTION > "):
+            self.bedDestroy(line)
+        elif line.startswith("TEAM ELIMINATED > "):
+            self.teamEliminated(line)
+        elif line.endswith("has disconnected, they have 5 minutes to rejoin before they are removed from the party."):
+            self.partyMemberLeft(line)
+        elif line == "You have been eliminated!":
+            self.selfDied()
+        elif line.endswith(" to the party! They have 60 seconds to accept."):
+            self.partyInvite(line)
+        elif line.endswith(" joined the party."):
+            self.partyJoin(line)
         elif line == "Bed Wars":
             self.endGame()
         elif line.count("joined the lobby!") > 0:
             self.joinLobby(line)
         elif line.count("has joined") > 0:
             self.playerJoinGame(line)
+        elif line.endswith(" reconnected."):
+            self.playerRejoinGame(line)
         elif line.startswith("ONLINE:"):
             self.whoCommand(line)
-        elif line.endswith("has quit!"):
+        elif line == "You are AFK. Move around to return from AFK.":
+            self.afk()
+        elif line.endswith("has quit!") or line.endswith("disconnected"):
             self.quitGame(line)
         elif line.startswith("The game starts in") and line.count("second") > 0:
             self.gameTime(line)
@@ -112,6 +132,8 @@ class LogMonitor:
             self.file("Game", "Start cancelled")
         elif line.startswith("Your new API key is "):
             self.newAPIKey(line)
+        elif line.count(":") > 0:
+            self.potentialChat(line)
         else:
             self.unprocessed(line)
 
@@ -197,6 +219,51 @@ class LogMonitor:
             self.playersInLobby = 0
             self.lobbyName = name
 
+    def voided(self, line: str):
+        """Process a fell in the void event
+
+        Args:
+            line (str): Line to process
+
+        Example:
+            username fell into the void.
+
+        Status:
+            inGame
+        """
+        self.status = GS.inGame
+
+        name = line.replace("username fell into the void.", "").strip()
+
+        if not name in self.mainUsers:
+            # Do not process statistics (useless)
+            self.file(CE.removed, line)
+            
+        else:
+            self.file(CE.void, "You voided!")
+
+    def bedDestroy(self, line: str):
+        """Process a lobby join event
+
+        Args:
+            line (str): Line to process
+
+        Example:
+            BED DESTRUCTION > White Bed description username!
+
+        Status:
+            inGame
+        """
+        self.status = GS.inGame
+
+        name = line.removeprefix("BED DESTRUCTION > ").removesuffix("!").split(" ")[-1]
+
+        if name not in self.mainUsers:
+            self.file(CE.removed, line)
+
+        else:
+            self.file(CE.bed, "You destroyed a bed!")
+
     def joinLobby(self, line: str):
         """Process a lobby join event
 
@@ -225,6 +292,111 @@ class LogMonitor:
 
 
         self.file(CE.player, "{}{}".format(rank, name))
+
+    def teamEliminated(self, line:str):
+        """Process a team eliminated event
+
+        Args:
+            line (str): Line to process
+
+        Example:
+            TEAM ELIMINATED > Color Team has been eliminated!
+
+        Status:
+            inGame
+        """
+        self.status = GS.inGame
+        team = line.removeprefix("TEAM ELIMINATED > ").removesuffix("has been eliminated!").strip()
+        self.file(CE.eliminated, team + " eliminated!")
+        
+
+    def teamEliminated(self, line:str):
+        """Process a party member leave event
+
+        Args:
+            line (str): Line to process
+
+        Example:
+            [RANK] username has disconnected, they have 5 minutes to rejoin before they are removed from the party.
+            username has disconnected, they have 5 minutes to rejoin before they are removed from the party.
+
+        Status:
+            unchanged
+        """
+        x = line.removesuffix("has disconnected, they have 5 minutes to rejoin before they are removed from the party.").strip().split(" ")
+        if self.status == GS.gameLobby:
+            self.autoLeavePartyLeave = True
+        if len(x) == 1:
+            self.file(CE.party, "Your party member: " + x[0] + " disconnected!")
+        else:
+            self.file(CE.party, "Your party member: " + x[0] + x[1] + " disconnected!")
+
+    def selfDied(self):
+        """Process player death
+
+        Status:
+            inGame
+        """
+        self.status = GS.inGame
+        self.file(CE.died, "You died")
+        
+
+    def partyInvite(self, line:str):
+        """Process a party invite
+
+        Args:
+            line (str): Line to process
+
+        Example:
+            [RANK] name1 invited [RANK] name2 to the party! They have 60 seconds to accept.
+            [RANK] name1 invited name2 to the party! They have 60 seconds to accept.
+            name1 invited [RANK] name2 to the party! They have 60 seconds to accept.
+            name1 invited name2 to the party! They have 60 seconds to accept.
+
+        Status:
+            unchanged
+        """
+        line = line.removesuffix(" to the party! They have 60 seconds to accept.").strip().split(" ")
+        x = LogMonitor.getRank(line[0])
+        if x == "NON":
+            name1 = x
+            rank1 = ""
+        else:
+            name1 = line[1]
+            rank1 = x + " "
+
+        if name1 in self.mainUsers:
+            name1 = "You"
+            rank1 = ""
+
+        name2 = line[-1]
+        x = LogMonitor.getRank(line[-2])
+        rank2 = "" if x == "NON" else x + " "
+
+        self.file(CE.party, "{}{} invited {}{}".format(rank1, name1, rank2, name2))
+
+    def partyJoin(self, line: str):
+        """Process a party join
+
+        Args:
+            line (str): Line to process
+
+        Example:
+            [RANK] name1 joined the party.
+            name1 joined the party.
+
+        Status:
+            unchanged
+        """
+        x = LogMonitor.getRank(line.split(" ")[0])
+        if x == "NON":
+            name = x
+            rank = ""
+        else:
+            name = line.split(" ")[1]
+            rank = x + " "
+
+        self.file(CE.party, "{}{} joined the party".format(rank, name))
 
     def endGame(self):
         """Process a game end event
@@ -276,6 +448,22 @@ class LogMonitor:
         self.playersInLobby = joinNumber
 
         self.file(CE.join, "{} ({})".format(name, joinNumber))
+
+    def playerRejoinGame(self, line: str):
+        """Process a player game lobby rejoin event
+
+        Args:
+            line (str): Line to process
+
+        Example:
+            username reconnected.
+
+        Status:
+            inGame
+        """
+        self.status = GS.inGame
+        name = line.removesuffix(" reconnected.")
+        self.file(CE.join, "{} rejoined".format(name))
     
     def whoCommand(self, line: str):
         """Process a who command
@@ -298,6 +486,17 @@ class LogMonitor:
             self.queue.add(username, "UNK", -1)
         self.file(CE.who, "{} players in the lobby".format(len(line)))
 
+    def afk(self):
+        """Process an afk event
+
+        Args:
+            line (str): Line to process
+
+        Status:
+            afk
+        """
+        self.status = GS.afk
+
     def quitGame(self, line: str):
         """Process a game lobby quit event
 
@@ -306,6 +505,7 @@ class LogMonitor:
 
         Example:
             username has quit!
+            username has disconnected
 
         Status:
             GameLobby
@@ -316,8 +516,9 @@ class LogMonitor:
         self.playersInLobby -= 1
 
         # Remove the player from the queue
-        name = line.removesuffix(" has quit!").strip()
+        name = line.removesuffix(" has quit!").removesuffix("disconnected").strip()
         self.queue.delete(name)
+        self.left.add(name, "UNK", -1)
 
         self.file(CE.quit, "{} ({})".format(name, self.playersInLobby))
 
@@ -361,6 +562,30 @@ class LogMonitor:
         self.newToken = key
 
         self.file(CE.api, key)
+
+    def potentialChat(self, line: str):
+        """Process a potential chat message
+
+        Args:
+            line (str): Line to process
+
+        Examples:
+            [RANK] username: message with spaces
+            username: message with spaces
+
+        Status:
+            inGame
+        """
+        self.status = GS.inGame
+        line = line.split(" ")
+        if len(line) < 3: self.unprocessed(" ".join(line))
+        rank = LogMonitor.getRank(line[0])
+        name = line[0] if rank == "NON" else line[1]
+
+        if not name.endswith(":"):
+            self.unprocessed(" ".join(line))
+        else:
+            self.file(CE.chat, "{}{}: {}".format(rank + " " if rank != "NON" else "", name, " ".join(line[(1 if rank == "NON" else 2):])))
 
     def unprocessed(self, line: str):
         """Process an unprocessed message event
@@ -416,28 +641,43 @@ class LogMonitor:
             bool: True if useful, false if not.
 
         """
-        if line == "": return False
-        if line == "[WATCHDOG ANNOUNCEMENT]": return False
-        if line == "This server is full! (Server closed)": return False
-        if line == "A player has been removed from your lobby.": return False
-        if line == "You were kicked while joining that server!": return False
-        if line == "Use /report to continue helping out the server!": return False
-        if line == "Blacklisted modifications are a bannable offense!": return False
-        if line == "You already have an API Key, are you sure you want to regenerate it?": return False
+        return not (line == "" or
+        line == "[WATCHDOG ANNOUNCEMENT]" or
+        line == "This server is full! (Server closed)" or
+        line == "A player has been removed from your lobby." or
+        line == "You were kicked while joining that server!" or
+        line == "Use /report to continue helping out the server!" or
+        line == "Blacklisted modifications are a bannable offense!" or
+        line == "You already have an API Key, are you sure you want to regenerate it?" or
+        line == "If you get disconnected use /rejoin to join back in the game." or
+        line == "You have respawned!" or
+        line == "Protect your bed and destroy the enemy beds." or
+        line == "Upgrade yourself and your team by collecting" or
+        line == "Iron, Gold, Emerald and Diamond from generators" or
+        line == "to access powerful upgrades." or
+        line == "This game has been recorded. Click here to watch the Replay!" or
+        line == "You cannot invite that player since they're not online." or
 
-        if line.replace("?","") == "": return False
-        if line.replace("-","") == "": return False
-        if line.count("Guild > ") > 0: return False
-        if line.count("Friend > ") > 0: return False
-        if line.count("You are AFK") > 0: return False
-        if line.count("You purchased") > 0: return False
-        if line.count("Unknown command. Type \"help\" for help.") > 0: return False
-        if line.count("[Mystery Box]") > 0 and line.count("found") > 0: return False
-        if line.count("You tipped") > 0 and line.count("players!") > 0: return False
-        if line.count("found a") > 0 and line.count("Mystery Box!") > 0: return False
-        if line.count("Watchdog has banned") > 0 and line.count("players in the last") > 0: return False
-        if line.count("Staff have banned an additional") > 0 and line.count("in the last") > 0: return False
-        return True
+        line.replace("?","") == "" or
+        line.replace("-","") == "" or
+        len(line.replace("-","").strip().replace("(","").replace(")","")) == 1 or
+
+        line.startswith("You will respawn in") or
+       (line.startswith("+") and line.count("Bed Wars Experience (") > 0) or
+       (line.startswith("+") and line.count("coins! (") > 0) or
+       (line.startswith("+") and line.endswith("Iron")) or
+       (line.startswith("+") and line.endswith("Gold")) or
+        line.startswith("Guild > ") or
+        line.startswith("Friend > ") or
+        line.startswith("You don't have enough") or
+        line.count("You purchased") > 0 or
+        line.count("Unknown command. Type \"help\" for help.") > 0 or
+        line.count("[Mystery Box]") > 0 and line.count("found") > 0 or
+        line.count("You tipped") > 0 and line.count("players!") > 0 or
+        line.count("found a") > 0 and line.count("Mystery Box!") > 0 or
+        line.count("Watchdog has banned") > 0 and line.count("players in the last") > 0 or
+        line.count("Staff have banned an additional") > 0 and line.count("in the last") > 0
+        )
 
     def file(self, type: str, message: str, printLine = True):
         """Print and log a message
