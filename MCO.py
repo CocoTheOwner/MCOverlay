@@ -90,6 +90,7 @@ def startMCO():
             logger.autoInvite = []
             if config.get("autoInvite"):
                 for player in inv:
+                    CS.type("/p " + player)
                     print("Autoinvite {}?".format(player))
                     #TODO: Add auto statistics check and invite
 
