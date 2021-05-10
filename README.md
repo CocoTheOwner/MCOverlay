@@ -45,8 +45,11 @@
 - [ ] API Request counter and overload blocker
 	- [ ] Hypixel
 	- [ ] Minecraft
-## Completed tasks
 - [ ] Upon open, disregard all entries before that timestamp (set linenumber)
+- [ ] Upkeep list of party members
+	- [ ] On party member disconnect leave lobby etc
+	- [ ] On party disconnect write message in party chat (?) (toggleable)
+## Completed tasks
 - [X] Autoleave+pwarp after game
 	- [X] Toggle (both leave & pwarp)
 - [X] Improve request getting (now less than 100ms! (based on your connection!))
