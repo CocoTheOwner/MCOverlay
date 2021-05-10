@@ -13,10 +13,9 @@
 	- [ ] Dynamic system showing all
 - [ ] GUI
 - [ ] Mistake "/who" detection and marking
-- [ ] Autowho
-	- [X] Don't use when first player in lobby
-	- ~~[ ] Maybe with party size~~
+- [ ] Party alarm
 	- [ ] Alarm when not all party members in lobby (detect amount)
+	- [ ] Leave gamelobby if party member disconnects or leaves
 - [ ] Lobby playername toggle (semi-command?)
 	- [ ] Chat
 	- [ ] Joined lobby
@@ -25,7 +24,7 @@
 	- [X] Player detection
 	- [X] Player already in list (do not request API again)
 	- [X] Rank detection
-	- [ ] Party detection
+	- [X] Party detection
 	- [ ] Guild detection
 	- [X] Staff detection
 	- [ ] Party list detection
@@ -49,7 +48,11 @@
 - [ ] Upkeep list of party members
 	- [ ] On party member disconnect leave lobby etc
 	- [ ] On party disconnect write message in party chat (?) (toggleable)
+- [ ] Split warning system
 ## Completed tasks
+- [X] Autowho
+	- [X] Don't use when first player in lobby
+	- ~~[ ] Maybe with party size~~
 - [X] Autoleave+pwarp after game
 	- [X] Toggle (both leave & pwarp)
 - [X] Improve request getting (now less than 100ms! (based on your connection!))
