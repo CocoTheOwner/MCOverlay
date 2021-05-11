@@ -8,6 +8,7 @@ class LogMonitor:
         os.makedirs("/".join(combinedLog.split("/")[:-1]))
     open(combinedLog, "w").close() # Reset file
 
+    isPartyLeader = None
     lobbyName = None
     mainUsers = None
     newToken = None
@@ -20,11 +21,15 @@ class LogMonitor:
 
     autoWho = False
     autoLeave = False
+    autoPartyList = False
     autoLeavePartyLeave = False
+
 
     resetStats = False
 
     autoInvite = []
+
+    party = []
 
     status = GS.unknown
 
@@ -41,9 +46,10 @@ class LogMonitor:
         self.autoLeave = False
         self.autoLeavePartyLeave = False
         self.resetStats = False
+        self.autoPartyList = False
         self.autoInvite = []
-        self.left = PlayerQueue()
-        self.queue = PlayerQueue()
+        self.left.reset()
+        self.queue.reset()
 
     def tick(self):
         """Ticks the logger. Only ticks if there is a log change.
@@ -94,7 +100,7 @@ class LogMonitor:
             split = line.strip().split("[Client thread/INFO]: [CHAT]")[1].strip()
             if split != "":
                 return split
-            self.file(CE.removed, line)
+            self.file(CE.removed, split)
         return None
 
     def process(self, line: str):
@@ -120,8 +126,14 @@ class LogMonitor:
             self.selfDied()
         elif line.endswith(" to the party! They have 60 seconds to accept."):
             self.partyInvite(line)
+        elif line.startswith("Party Leader: "):
+            self.partyLeader(line)
+        elif line.startswith("Party Members: "):
+            self.partyMembers(line)
         elif line.endswith(" joined the party."):
             self.partyJoin(line)
+        elif line.endswith(" left the party."):
+            self.partyLeave(line)
         elif line == "Bed Wars":
             self.endGame()
         elif line.count("joined the lobby!") > 0:
@@ -362,9 +374,6 @@ class LogMonitor:
             [RANK] name1 invited name2 to the party! They have 60 seconds to accept.
             name1 invited [RANK] name2 to the party! They have 60 seconds to accept.
             name1 invited name2 to the party! They have 60 seconds to accept.
-
-        Status:
-            unchanged
         """
         line = line.removesuffix(" to the party! They have 60 seconds to accept.").strip().split(" ")
         x = LogMonitor.getRank(line[0])
@@ -385,6 +394,83 @@ class LogMonitor:
 
         self.file(CE.party, "{}{} invited {}{}".format(rank1, name1, rank2, name2))
 
+    def partyLeader(self, line: str):
+        """Process a party list leader line
+
+        Args:
+            line (str): Line to process
+
+        Example:
+            Party Leader: [RANK] username ?
+            Party Leader: username ?
+        """
+
+        x = line.removeprefix("Party Leader: ").split(" ")
+        rank = LogMonitor.getRank(x[0])
+        if rank == "NON":
+            name = x[0]
+            rank = ""
+        else:
+            name = x[1]
+            rank = rank + " "
+        if name in self.mainUsers:
+            self.isPartyLeader = True
+        
+        self.file(CE.party, "Party List:")
+        self.file(CE.party, "Leader: {}{}".format(rank, name))
+        
+
+    def partyMembers(self, line: str):
+        """Process a party list member line
+
+        Args:
+            line (str): Line to process
+
+        Example:
+            Party Members: [RANK] username ? username ? [RANK] username
+        """
+        x = line.removeprefix("Party Members: ").split(" ? ")
+        for playerWithRank in x:
+            playerWithRank = playerWithRank.split(" ")
+            rank = LogMonitor.getRank(playerWithRank[0])
+            if rank == "NON":
+                name = playerWithRank[0]
+            else:
+                name = playerWithRank[1]
+            if not name in self.party:
+                self.party.append(name)
+            self.queue.add(name, rank)
+
+        self.file(CE.party, "Members: {}".format(", ".join(self.party)))
+
+    def partyDisband(self, line: str):
+        """Process a party disband
+
+        Args:
+            line(str): Line to process
+
+        Example:
+            [RANK] username has disbanded the party!
+            username has disbanded the party!
+
+        """
+
+
+        x = line.removesuffix(" has disbanded the party!").split(" ")
+        rank = LogMonitor.getRank(x[0])
+        if rank == "NON":
+            name = x[0]
+            rank = ""
+        else:
+            name = x[1]
+            rank = rank + " "
+
+        self.party = []
+
+        self.isPartyLeader = None
+
+        self.file(CE.party, "The party was disbanded by {}{}".format(rank, name))
+
     def partyJoin(self, line: str):
         """Process a party join
 
@@ -400,13 +486,51 @@ class LogMonitor:
         """
         x = LogMonitor.getRank(line.split(" ")[0])
         if x == "NON":
+            name = line.split(" ")[0]
+            rank = ""
+        else:
+            name = line.split(" ")[1]
+            rank = "[" + x + "] "
+
+        self.party.append(name)
+
+        self.queue.add(name, rank)
+
+        if len(self.party) == 0:
+            self.isPartyLeader = False
+
+        self.file(CE.party, "{}{} joined the party".format(rank, name))
+        self.file(CE.party, ("Party members are now: {}".format(", ".join(self.party))) if len(self.party) > 0 else "The party is empty!")
+
+    def partyLeave(self, line: str):
+        """Process a party leave
+
+        Args:
+            line (str): Line to process
+
+        Example:
+            [RANK] name1 left the party.
+            name1 left the party.
+
+        Status:
+            unchanged
+        """
+        x = LogMonitor.getRank(line.split(" ")[0])
+        if x == "NON":
             name = x
             rank = ""
         else:
             name = line.split(" ")[1]
             rank = "[" + x + "] "
 
-        self.file(CE.party, "{}{} joined the party".format(rank, name))
+        if not name in self.party:
+            print("Someone left the party that was not in it?! BUG!")
+            self.autoPartyList = True
+        else:
+            self.party.remove(name)
+
+        self.file(CE.party, "{}{} left the party".format(rank, name))
+        self.file(CE.party, ("Party members are now: {}".format(", ".join(self.party))) if len(self.party) > 0 else "The party is empty!")
 
     def endGame(self):
         """Process a game end event
