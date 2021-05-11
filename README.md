@@ -3,11 +3,9 @@
 
 # Task Checklist
 ## Backend
-- [ ] Autoinvite
-	- [X] Toggle
-	- [ ] Check stats
-		- [ ] Configurable
-	- [X] Name mention
+- [ ] Statistics to SQL
+- [ ] API Load
+	- [ ] API overload handling
 ## Frontend
 - [ ] GUI Layout
 - [ ] Selectable statistics in table
@@ -26,6 +24,8 @@
 	- [ ] Multiple games
 - [ ] Version in title of program
 - [ ] Finish TODO's
+- [ ] Configurable autoinvite statistics
+	- [ ] Statistics check
 ## Completed tasks
 - [X] Upon open, disregard all entries before that timestamp (set linenumber)
 	- Improved by only discarding certain elements 
@@ -78,3 +78,6 @@
 - [X] Party alarm
 	- [X] Leave gamelobby if party member disconnects or leaves
 - [X] Mistake "/who" detection and marking
+- [X] Autoinvite
+	- [X] Toggle
+	- [X] Name mention

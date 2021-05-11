@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QAbstractItemDelegate, QApplication, QProgressBar, QPushButton, QTableView, QWidget, QHeaderView, QLabel
+from PySide6.QtWidgets import QApplication, QProgressBar, QPushButton, QTableView, QWidget, QHeaderView, QLabel
 from PySide6.QtGui import QFont
 from PySide6.QtCore import Qt
 
