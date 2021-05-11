@@ -2,7 +2,7 @@ from PlayerQueue import PlayerQueue
 from Enums import GameOrigin as GO, CommandOrigin as CO, SystemEvents as SE, SystemStatus as SS
 from API import API
 from LogMonitor import LogMonitor
-from CommandSender import CommandSender as CS
+from CommandSender import CommandSender
 from Config import Config
 import time
 
@@ -24,6 +24,9 @@ defaultConfig = {
         "autoPList": True,
         "autoLeavePartyDC": True
     },
+    "autoInviteStatBypass": [
+
+    ],
     "leavePartyMemberMissing": True,
     "enableStatistics-Do-Not-Disable!": True
 }
@@ -39,6 +42,7 @@ class MCO:
     controller = None
     logger = None
     autoInviteToggle = True
+    commandSender = None
 
     def __init__(self):
         
@@ -74,54 +78,66 @@ class MCO:
         self.file(SE.api, self.api.hypixelStats())
         self.file(SE.api, self.api.minecraftStats())
 
+        # CommandSender
+        self.file(SE.notify, "Loading Command Sender")
+        self.commandSender = CommandSender()
+
         # Update status
         self.status = SS.waiting
         self.file(SE.notify, "Finished initializing")
 
     def start(self):
 
-        # Update status
-        self.status = SS.running
+        try:
 
-        # Run PList and who commands
-        time.sleep(1)
-        CS.plist(CO.startup)
-        time.sleep(0.25)
-        CS.who(CO.startup)
-        
-        cycle = 0
+            # Update status
+            self.status = SS.running
 
-        # Main loop
-        self.file(SE.notify, "Starting main loop")
-        while True:
+            # Run PList and who commands
+            time.sleep(1)
+            self.commandSender.plist(CO.startup)
+            time.sleep(0.25)
+            self.commandSender.who(CO.startup)
+            
+            cycle = 0
 
-            # Update cycle number (1 per second)
-            cycle += 0.1
+            # Main loop
+            self.file(SE.notify, "Starting main loop")
+            while True:
 
-            if cycle % 60 == 0:
-                self.file(SE.api, self.api.hypixelStats())
-                self.file(SE.api, self.api.minecraftStats())
+                # Update cycle number (1 per second)
+                cycle += 0.1
 
-            # Update logger
-            self.logger.tick()
+                if cycle % 60 == 0:
+                    self.file(SE.api, self.api.hypixelStats())
+                    self.file(SE.api, self.api.minecraftStats())
 
-            # See if there are config changes
-            self.config.hotload()
+                # Update logger
+                self.logger.tick()
 
-            # Check for logger tasks
-            self.loggerTasks()
+                # See if there are config changes
+                self.config.hotload()
 
-            # Update player definitions
-            self.statisticsTask()
+                # Check for logger tasks
+                self.loggerTasks()
 
-            # Check controller
-            if self.controllerTask(): break
+                # Update player definitions
+                self.statisticsTask()
 
-            # Wait a short while before refreshing
-            # Note: This can be decreased to increase responsiveness,
-            #       but it may break certain elements of the program.
-            # Use at your own risk
-            time.sleep(0.1)
+                # Check controller
+                if self.controllerTask(): break
+
+                # Wait a short while before refreshing
+                # Note: This can be decreased to increase responsiveness,
+                #       but it may break certain elements of the program.
+                # Use at your own risk
+                time.sleep(0.1)
+
+        except Exception as e:
+            self.commandSender.available = False
+            self.file(SE.error, "An uncaught exception has been raised in the main loop: {}".format(e))
+            self.file(SE.error, "Disabling all command outputs of the program to prevent potential damage")
+
 
         # Shutdown
         self.status = SS.shutdown
@@ -139,37 +155,37 @@ class MCO:
         # Check for autowho
         if self.logger.autoWho:
             self.logger.autoWho = False
-            if self.config.get("autoCommands")["autoWho"]: CS.who(CO.autowho)
+            if self.config.get("autoCommands")["autoWho"]: self.commandSender.who(CO.autowho)
 
         # Check for autoplist
         if self.logger.autoPartyList:
             self.logger.autoPartyList = False
-            if self.config.get("autoCommands")["autoPList"]: CS.plist(CO.autoplist)
+            if self.config.get("autoCommands")["autoPList"]: self.commandSender.plist(CO.autoplist)
 
         # Check for logger party member missing tier 2
         if self.logger.partyMemberMissingTwo:
             self.logger.partyMemberMissingTwo = False
-            if self.config.get("leavePartyMemberMissing"): CS.pleave(CO.partymissing)
+            if self.config.get("leavePartyMemberMissing"): self.commandSender.pleave(CO.partymissing)
 
         # Check for autoleave
         if self.logger.autoLeave:
             self.logger.autoLeave = False
             time.sleep(2)
             if self.config.get("autoCommands")["autoLeave"]: 
-                CS.leave(CO.autoleave)
+                self.commandSender.leave(CO.autoleave)
                 if self.logger.party != None and len(self.logger.party) > 1 and self.config.get("autoCommands")["autoPWarp"]:
                     time.sleep(0.5)
-                    CS.pwarp(CO.autoleave)
+                    self.commandSender.pwarp(CO.autoleave)
             elif self.config.get("autoCommands")["autoPWarp"]:
-                CS.pwarp(CO.autoleave)
+                self.commandSender.pwarp(CO.autoleave)
 
         # Check for party member DC
         if self.logger.autoLeavePartyLeave:
             self.logger.autoLeavePartyLeave = False
             if self.config.get("autoCommands")["autoLeavePartyDC"]:
-                CS.leave(CO.partyleft)
+                self.commandSender.leave(CO.partyleft)
                 time.sleep(0.25)
-                CS.pwarp(CO.partyleft)
+                self.commandSender.pwarp(CO.partyleft)
 
         # Check for failed autowho's by others
         if len(self.logger.failedWho) > 0:
@@ -192,11 +208,13 @@ class MCO:
             self.logger.autoInvite = []
             if self.config.get("autoCommands")["autoInvite"]:
                 for player in inv:
-                    CS.type("/p " + player, CO.autoinvite)
-                    #TODO: Add auto statistics check and invite
+                    if player in self.config.get("autoInviteStatBypass"):
+                        self.commandSender.type("/p " + player, CO.autoinvite)
+                    elif True: #TODO: Add auto statistics check and invite
+                        self.commandSender.type("/p " + player, CO.autoinvite)
 
     def controllerTask(self):
-        self.controller.load()
+        self.controller.hotload()
         if self.controller.get("stop"):
             self.controller.set("stop", False)
             self.controller.save()

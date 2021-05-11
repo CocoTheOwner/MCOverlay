@@ -18,8 +18,15 @@ class Config:
         self.modificationTime = os.path.getmtime(self.configFile)
 
     def hotload(self):
-        if self.modificationTime != os.path.getmtime(self.configFile):
-            self.modificationTime = os.path.getmtime(self.configFile)
+        doLoad = False
+        try:
+            if self.modificationTime != os.path.getmtime(self.configFile):
+                self.modificationTime = os.path.getmtime(self.configFile)
+                doLoad = True
+        except FileNotFoundError:
+            print("Could not find file. Making config file again")
+            self.ensureFileExistNotEmpty()
+        if doLoad:
             self.load()
             print("Hotloaded config at {}".format(self.configFile))
 

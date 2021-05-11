@@ -85,6 +85,7 @@ class SystemEvents:
     command = "Cmd"
     notify = "Note"
     api = "API"
+    error = "Error"
     maxEventLength = ChatEvents.maxEventLength
 
 class SystemStatus:
