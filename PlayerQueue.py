@@ -50,3 +50,9 @@ class PlayerQueue:
                 "stars": (stars if stars != -1 else savedStars)
             }
         self.updateEmpty()
+
+    def reset(self):
+        """Resets the list maintained
+        """
+        self.queue = {}
+        self.updateEmpty()
