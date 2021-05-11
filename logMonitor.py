@@ -82,7 +82,7 @@ class LogMonitor:
             if line == None:
                 continue
             elif not LogMonitor.lineIsUseful(line):
-                self.file("USLS", line, False)
+                self.file(CE.useless, line, False)
             else:
                 self.process(line) 
 
