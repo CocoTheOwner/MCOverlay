@@ -76,7 +76,7 @@ def loggerTasks(logger: LogMonitor):
         time.sleep(2)
         if config.get("autoCommands")["autoLeave"]: 
             CS.leave()
-            if config.get("autoCommands")["autoPWarp"]:
+            if logger.party != None and len(logger.party) > 1 and config.get("autoCommands")["autoPWarp"]:
                 time.sleep(0.5)
                 CS.pwarp()
         elif config.get("autoCommands")["autoPWarp"]:
