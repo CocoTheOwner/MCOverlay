@@ -12,7 +12,7 @@ class API:
 
     uuidsFile = Config("./cache/uuids.json", {})
     uuids = uuidsFile.config
-    uuidsFile.load()
+    uuidsFile.hotload()
 
     stats = {}
 
@@ -33,9 +33,21 @@ class API:
             playerQueue (dict): Queue of players to get stats of
 
         """
-        if not self.getRequest("https://api.mojang.com/")["Status"] == "OK":
-            print("Minecraft API is down!")
+        failed = 0
+        maxFailed = 60
+        while failed < maxFailed:
+            MCAPI = self.getRequest("https://api.mojang.com/")
+            if MCAPI == None or MCAPI["Status"] != "OK":
+                print("Minecraft API is down!")
+                failed += 1
+                time.sleep(2)
+            else:
+                break
+        if failed == maxFailed:
+            print("Minecraft API has been down for 2 minutes. Fetch failed!")
             return
+        if failed > 0:
+            print("Minecraft API has been down for {} seconds, but has resumed work.".format(str(failed * 2)))
         threads = []
         with ThreadPoolExecutor(max_workers=10) as executor:
             count = 0
@@ -232,8 +244,11 @@ class API:
             None if failed, content of webpage get if successful
         
         """
-        request = requests.get(link, headers={'User-Agent':str(ua.random), "Connection": "close"}).content
         try:
+            request = requests.get(link, headers={'User-Agent':str(ua.random), "Connection": "close"}).content
             return json.loads(request)
+        except requests.exceptions.ConnectionError as e:
+            if self.debug: print("Failed to request from {} because the server is unresponsive.".format(link))
         except JSONDecodeError as e:
             if self.debug: print("Failed to request from {} because of JSON Decode Error. Likely due to invalid link or no connection.\nLink: {}\nReturned: {}".format(e, link, request))
+        return None
