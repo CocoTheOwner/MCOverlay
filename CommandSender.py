@@ -25,6 +25,13 @@ class CommandSender:
         """
         CommandSender.type("/p warp")
 
+    def pleave():
+        """Leaves and warps the party after
+        """
+        CommandSender.leave()
+        time.sleep(0.5)
+        CommandSender.pwarp()
+
     def type(line: str):
         """Writes a line using the virtual keyboard
 

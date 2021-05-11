@@ -18,17 +18,20 @@ class LogMonitor:
     lineNumber = 0
     playersInLobby = 0
     lobbyCap = 0
+    timeLeftEstimate = 0
 
     autoWho = False
     autoLeave = False
     autoPartyList = False
     autoLeavePartyLeave = False
-
+    partyMemberMissing = False
+    partyMemberMissingTwo = False
 
     resetStats = False
 
     autoInvite = []
 
+    game = []
     party = []
 
     status = GS.unknown
@@ -235,6 +238,7 @@ class LogMonitor:
 
         # Reset the lobby counter
         self.playersInLobby = 0
+        self.timeLeftEstimate = 0
 
         # Retrieve the lobby name
         name = line.removeprefix("You are currently connected to server").removeprefix("Sending you to").removeprefix("Taking you to").strip().split(' ')[0]
@@ -305,6 +309,7 @@ class LogMonitor:
 
         # Reset the lobby counter
         self.playersInLobby = 0
+        self.timeLeftEstimate = 0
 
         line = line.removeprefix(">>>").removesuffix("joined the lobby!").strip().split(" ")
         # ["[RANK]", "username"]
@@ -312,6 +317,9 @@ class LogMonitor:
         rank = LogMonitor.getRank(line[0])
         rank = "[" + rank + "] " if rank != "NON" else ""
         name = line[1]
+
+        if name == self.ownUsername:
+            return
 
         self.queue.add(name, rank, origin=OG.mainLobby)
 
@@ -634,6 +642,7 @@ class LogMonitor:
             self.status = GS.mainLobby
             self.autoLeave = True
             self.resetStats = True
+            self.game = []
             self.file(CE.game, "Finished")
         else:
             self.status = GS.inGame
@@ -662,7 +671,7 @@ class LogMonitor:
         lobbyCap = int(x[1])
 
         if name == self.ownUsername and joinNumber > 1:
-                self.autoWho = True
+            self.autoWho = True
 
         # Store player by username
         self.queue.add(name, origin=OG.gameLobby)
@@ -740,6 +749,7 @@ class LogMonitor:
         name = line.removesuffix(" has quit!").removesuffix("disconnected").strip()
         self.queue.delete(name)
         self.left.add(name, "UNK", -1)
+        self.game.remove(name)
 
         self.file(CE.quit, "{} ({}/{})".format(name, self.playersInLobby, self.lobbyCap))
 
@@ -762,6 +772,12 @@ class LogMonitor:
         self.status = GS.gameLobby
 
         time = line.removeprefix("The game starts in").removesuffix("!").removesuffix("s").removesuffix("second").strip()
+        self.timeLeftEstimate = time
+        for player in self.party:
+            if not player in self.game:
+                if self.partyMemberMissing:
+                    self.partyMemberMissingTwo = True
+                self.partyMemberMissing = True
 
         self.file(CE.time, time + "s")
 

@@ -28,6 +28,7 @@ config = Config('./config/config.json', {
         "autoPList": True,
         "autoLeavePartyDC": True
     },
+    "leavePartyMemberMissing": True,
     "enableStatistics-Do-Not-Disable!": True
 })
 print("Loading controller")
