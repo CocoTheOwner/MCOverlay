@@ -24,13 +24,13 @@
 	- [X] Player detection
 	- [X] Player already in list (do not request API again)
 	- [X] Rank detection
-	- [X] Party detection
+	- [ ] Party detection
 	- [ ] Guild detection
 	- [X] Staff detection
 	- [ ] Party list detection
 		- [ ] Party promotion detection (who is leader, moderator, GUI option)
 	- [X] Who-command detection
-- [ ] Error and warning system
+- [ ] Error and warning system for API
 	- [ ] Timeout
 	- [X] API overload (diff MCAPI / HyAPI)
 - [ ] Dynamic game type selection system
