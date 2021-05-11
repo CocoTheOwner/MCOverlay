@@ -87,9 +87,6 @@ class API:
             print("An unhandled exception was raised for player: {}\nError: {}".format(player, str(type(e))))
             raise e
 
-    def getApiStatus(self):
-        return self.minecraftStats() + "\n" + self.hypixelStats()
-
     def hypixelStats(self):
         """Retrieve hypixel API server information
 
