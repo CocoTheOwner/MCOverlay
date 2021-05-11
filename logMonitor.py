@@ -1,5 +1,5 @@
 import os
-from Enums import ChatEvents as CE, GameStatus as GS, GameOrigin as GO
+from Enums import ChatEvents as CE, GameStatus as GS, GameOrigin as GO, SystemStatus as SS
 from PlayerQueue import PlayerQueue
 class LogMonitor:
 
@@ -993,7 +993,7 @@ class LogMonitor:
             message = "[{}] {} | {}: {}".format(
                 
                 "SYSTEM",
-                "Startup" + (GS.maxStatusLength - len("Startup")) * " ",
+                SS.oldLogs + (GS.maxStatusLength - len(SS.oldLogs)) * " ",
                 "Prevs" + (CE.maxEventLength - len("Prevs")) * " ",
                 message
             )

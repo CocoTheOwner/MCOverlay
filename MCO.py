@@ -60,11 +60,14 @@ class MCO:
             self.config.get("ownUsername"), 
             False
         )
+        self.status = SS.oldLogs
+        self.file(SE.notify, "Going through old logs (if there are any)")
         self.logger.tick(True)
         self.logger.tick(True)
         self.logger.resetExposed()
 
         # API
+        self.status = SS.startup
         self.file(SE.notify, "Loading API")
         self.api = API(self.config.get("token"), True)
         self.file(SE.api, self.api.hypixelStats())

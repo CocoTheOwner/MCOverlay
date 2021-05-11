@@ -67,18 +67,18 @@ class ChatEvents:
     logAll = logTypes == all
 
 class GameStatus:
-    inGame = "InGame"
-    gameLobby = "GameLobby"
-    mainLobby = "MainLobby"
+    inGame = "In Game"
+    gameLobby = "Game Lobby"
+    mainLobby = "Main Lobby"
     unknown = "Unknown"
     afk = "AFK"
     maxStatusLength = len(gameLobby)
 
 class GameOrigin:
-    mainLobby = "MainLobby"
-    gameLobby = "GameLobby"
-    mainChat = "MainChat"
-    gameChat = "GameChat"
+    mainLobby = "Main Lobby"
+    gameLobby = "Game Lobby"
+    mainChat = "Main Chat"
+    gameChat = "Game Chat"
     party = "Party"
 
 class SystemEvents:
@@ -92,13 +92,14 @@ class SystemStatus:
     waiting = "Waiting"
     running = "Running"
     shutdown = "Shutdown"
+    oldLogs = "Old Logs"
     none = "None"
     maxStatusLength = GameStatus.maxStatusLength
 class CommandOrigin:
     startup = "Startup"
-    autowho = "AutoWho"
-    autoleave = "AutoLeave"
-    autoplist = "AutoPList"
-    autoinvite = "AutoInvite"
-    partyleft = "PartyMemberLeft"
-    partymissing = "PartyMemberMissing"
+    autowho = "Auto Who"
+    autoleave = "Auto Leave"
+    autoplist = "Auto P List"
+    autoinvite = "Auto Invite"
+    partyleft = "Party Member Left"
+    partymissing = "Party Member Missing"
