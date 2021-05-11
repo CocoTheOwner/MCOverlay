@@ -134,6 +134,10 @@ class LogMonitor:
             self.partyJoin(line)
         elif line.endswith(" left the party."):
             self.partyLeave(line)
+        elif line.count(" has promoted" ) > 0 and line.endswith("to Party Leader"):
+            self.partyPromote(line)
+        elif line.startswith("The party was transferred to "):
+            self.partyTransfer(line)
         elif line == "Bed Wars":
             self.endGame()
         elif line.count("joined the lobby!") > 0:
@@ -515,6 +519,10 @@ class LogMonitor:
         Status:
             unchanged
         """
+        if line == "You left the party.":
+            self.isPartyLeader = False
+            self.party = []
+            return
         x = LogMonitor.getRank(line.split(" ")[0])
         if x == "NON":
             name = x
@@ -531,6 +539,86 @@ class LogMonitor:
 
         self.file(CE.party, "{}{} left the party".format(rank, name))
         self.file(CE.party, ("Party members are now: {}".format(", ".join(self.party))) if len(self.party) > 0 else "The party is empty!")
+
+    def partyPromote(self, line: str):
+        """Process a party promote
+
+        Args:
+            line (str): Line to process
+
+        Example:
+            [RANK] name1 has promoted [RANK] name2 to Party Leader
+            name1 has promoted name2 to Party Leader
+        """
+        x = line.replace(" has promoted", "").removesuffix(" to Party Leader").split(" ")
+        if x[-1] in self.mainUsers:
+            self.isPartyLeader = True
+        else:
+            self.isPartyLeader = False
+        rank1 = LogMonitor.getRank(x[0])
+        if rank1 == "NON":
+            rank1 = ""
+            name1 = x[0]
+        else:
+            rank1 = "[" + rank1 + "] "
+            name1 = x[1]
+        
+        rank2 = LogMonitor.getRank(x[-2])
+        if rank2 == "NON":
+            rank2 = ""
+            name2 = x[-1]
+        else:
+            rank2 = "[" + rank2 + "] "
+            name2 = x[-1]
+
+        if name1 in self.mainUsers:
+            rank1 = ""
+            name1 = "You"
+        if name2 in self.mainUsers:
+            rank2 = ""
+            name2 = "you"
+
+        self.file(CE.party, "{}{} promoted {}{} to Party Leader".format(rank1, name1, rank2, name2))
+
+    def partyTransfer(self, line: str):
+        """Process a party transfer
+
+        Args:
+            line (str): Line to process
+
+        Example:
+            The party was transferred to [RANK] name1 by [RANK] name2
+            The party was transferred to name1 by name2
+        """
+        x = line.removeprefix("The party was transferred to ").replace(" by", "").split(" ")
+        if x[-2] in self.mainUsers:
+            self.isPartyLeader = True
+        else:
+            self.isPartyLeader = False
+        rank1 = LogMonitor.getRank(x[0])
+        if rank1 == "NON":
+            rank1 = ""
+            name1 = x[0]
+        else:
+            rank1 = "[" + rank1 + "] "
+            name1 = x[1]
+        
+        rank2 = LogMonitor.getRank(x[-2])
+        if rank2 == "NON":
+            rank2 = ""
+            name2 = x[-1]
+        else:
+            rank2 = "[" + rank2 + "] "
+            name2 = x[-1]
+
+        if name1 in self.mainUsers:
+            rank1 = ""
+            name1 = "you"
+        if name2 in self.mainUsers:
+            rank2 = ""
+            name2 = "you"
+
+        self.file(CE.party, "{}{} transferred the party to {}{}".format(rank1, name1, rank2, name2))
 
     def endGame(self):
         """Process a game end event
