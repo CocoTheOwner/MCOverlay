@@ -4,9 +4,6 @@
 # Task Checklist
 ## Backend
 - [ ] Mistake "/who" detection and marking
-- [ ] Party alarm
-	- [ ] Alarm when not all party members in lobby (detect amount)
-	- [ ] Leave gamelobby if party member disconnects or leaves
 - [ ] Autoinvite
 	- [X] Toggle
 	- [ ] Check stats
@@ -19,6 +16,7 @@
 	- [ ] Dynamic system showing all
 	- [ ] Party detection
 	- [ ] Guild detection
+- [ ] Alarm when not all party members in lobby (detect amount)
 - [ ] Navigate to log file
 	- Perhaps navigate to C:/Users, let the user pick a folder.
 	- Then see if there's a .minecraft folder in */AppData/
@@ -76,3 +74,6 @@
 	- [X] Party list detection
 		- [X] Party promotion detection (who is leader, moderator, GUI option)
 	- [X] Who-command detection
+- [X] Refresh player statistics at the end of the game
+- [X] Party alarm
+	- [X] Leave gamelobby if party member disconnects or leaves
