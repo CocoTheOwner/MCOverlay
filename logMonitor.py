@@ -1,5 +1,5 @@
 import os
-from Enums import ChatEvents as CE, GameStatus as GS, Origin as OG
+from Enums import ChatEvents as CE, GameStatus as GS, GameOrigin as GO
 from PlayerQueue import PlayerQueue
 class LogMonitor:
 
@@ -28,6 +28,7 @@ class LogMonitor:
     partyMemberMissingTwo = False
 
     resetStats = False
+    isStartup = False
 
     autoInvite = []
     failedWho = []
@@ -55,9 +56,10 @@ class LogMonitor:
         self.left.reset()
         self.queue.reset()
 
-    def tick(self):
+    def tick(self, isStartup = False):
         """Ticks the logger. Only ticks if there is a log change.
         """
+        self.isStartup = isStartup
         if self.modificationTime != os.path.getmtime(self.logFilePath):
             self.modificationTime = os.path.getmtime(self.logFilePath)
             self.readlog()
@@ -179,11 +181,7 @@ class LogMonitor:
         Examples:
             [STAR?] username: message may contain spaces
             [STAR?] [RANK] username: message may contain spaces
-
-        Status:
-            mainLobby
         """
-        self.status = GS.mainLobby
 
         split = line.split(" ")
         # ["[STAR?]", "username:", "message", "may", "contain", "spaces"]
@@ -210,9 +208,10 @@ class LogMonitor:
         # Check if the player is the main player
         if user == self.ownUsername:
             self.file(CE.chat, "[{}] {}{}: {}".format(stars, rank, user, message.strip()))
-            
+            return
+
         # Add the player to the playerqueue
-        self.queue.add(user, rank, stars, OG.mainChat)
+        self.queue.add(user, rank, stars, GO.mainChat)
 
         rank = "[" + rank + "] " if rank != "NON" else ""
 
@@ -233,11 +232,7 @@ class LogMonitor:
         Examples:
             username: message may contain spaces
             [RANK] username: message may contain spaces
-
-        Status:
-            mainLobby
         """
-        self.status = GS.mainLobby
 
         split = line.split(" ")
 
@@ -257,15 +252,20 @@ class LogMonitor:
 
         # Check if the player is the main player
         if user == self.ownUsername:
-            self.file(CE.chat, "{}{}: {}".format(rank, user, message.strip()))
-            
-        rank = "[" + rank + "] " if rank != "NON" else ""
+            rank = ""
+        else:
+            rank = "[" + rank + "] " if rank != "NON" else ""
 
         if (message.count("/who") > 0 and message.count(" ") < 2) or\
             (message.count("who") > 0 and message.count(" ") == 0):
-            self.failedWho.append(user)
-
-        self.file(CE.chat, "{}{}: {}".format(rank, user, message.strip()))
+            if user == self.ownUsername:
+                self.autoWho = True
+                self.file(CE.chat, "You failed an autowho! Sending again...")
+            else:
+                self.failedWho.append(user)
+                self.file(CE.chat, "{}{} failed /who: {}".format(rank, user, message.strip()))
+        else:
+            self.file(CE.chat, "{}{}: {}".format(rank, user, message.strip()))
 
     def moveLobby(self, line: str):
         """Process a lobby move event
@@ -367,7 +367,7 @@ class LogMonitor:
         if name == self.ownUsername:
             return
 
-        self.queue.add(name, rank, origin=OG.mainLobby)
+        self.queue.add(name, rank, origin=GO.mainLobby)
 
 
         self.file(CE.player, "{}{}".format(rank, name))
@@ -496,7 +496,7 @@ class LogMonitor:
                 name = playerWithRank[1]
             if not name in self.party:
                 self.party.append(name)
-            self.queue.add(name, rank, origin=OG.party)
+            self.queue.add(name, rank, origin=GO.party)
 
         self.file(CE.party, "Members: {}".format(", ".join(self.party)))
 
@@ -551,7 +551,7 @@ class LogMonitor:
 
         self.party.append(name)
 
-        self.queue.add(name, rank, origin=OG.party)
+        self.queue.add(name, rank, origin=GO.party)
 
         if len(self.party) == 0:
             self.isPartyLeader = False
@@ -720,13 +720,15 @@ class LogMonitor:
             self.autoWho = True
 
         # Store player by username
-        self.queue.add(name, origin=OG.gameLobby)
+        self.queue.add(name, origin=GO.gameLobby)
+        self.game.append(name)
 
         # Save the amount of players in the lobby
         self.playersInLobby = joinNumber
         self.lobbyCap = lobbyCap
 
         self.file(CE.join, "{} ({}/{})".format(name, joinNumber, lobbyCap))
+        if self.debug: self.file(CE.join, "Currently in lobby ({}): {}".format(len(self.game), self.game))
 
     def playerRejoinGame(self, line: str):
         """Process a player game lobby rejoin event
@@ -762,7 +764,7 @@ class LogMonitor:
         self.resetStats = True
         for username in line:
             self.file(CE.who, username)
-            self.queue.add(username, origin=OG.gameLobby)
+            self.queue.add(username, origin=GO.gameLobby)
         self.file(CE.who, "({}/{}) players in the lobby".format(len(line), self.lobbyCap))
 
     def afk(self):
@@ -795,7 +797,11 @@ class LogMonitor:
         name = line.removesuffix(" has quit!").removesuffix("disconnected").strip()
         self.queue.delete(name)
         self.left.add(name, "UNK", -1)
-        self.game.remove(name)
+        if name in self.game:
+            self.game.remove(name)
+        else:
+            self.file(CE.lobby, "{} left but were not in the game! BUG?!".format(name))
+            self.file(CE.lobby, "Currently in game: {}".format(", ".join(self.game)))
 
         self.file(CE.quit, "{} ({}/{})".format(name, self.playersInLobby, self.lobbyCap))
 
@@ -868,11 +874,12 @@ class LogMonitor:
         if len(line) < 3: self.unprocessed(" ".join(line))
         rank = LogMonitor.getRank(line[0])
         name = line[0] if rank == "NON" else line[1]
+        message = " ".join(line[(1 if rank == "NON" else 2):])
 
         if not name.endswith(":"):
             self.unprocessed(" ".join(line))
         else:
-            self.file(CE.chat, "{}{}: {}".format(rank + " " if rank != "NON" else "", name, " ".join(line[(1 if rank == "NON" else 2):])))
+            self.file(CE.chat, "{}{}: {}".format("[" + rank + "] " if rank != "NON" else "", name.removesuffix(":"), message))
 
     def unprocessed(self, line: str):
         """Process an unprocessed message event
@@ -974,13 +981,22 @@ class LogMonitor:
             message (str): The message to display
             printLine (bool): If true, prints the line
         """
-        message = "[{}] {} | {}: {}".format(
-            
-            (6-len(str(self.lineNumber))) * "0" + str(self.lineNumber),
-            self.status + (GS.maxStatusLength - len(self.status)) * " ",
-            type + (CE.maxEventLength - len(type)) * " ",
-            message
-        )
+        if not self.isStartup:
+            message = "[{}] {} | {}: {}".format(
+                
+                (6-len(str(self.lineNumber))) * "0" + str(self.lineNumber),
+                self.status + (GS.maxStatusLength - len(self.status)) * " ",
+                type + (CE.maxEventLength - len(type)) * " ",
+                message
+            )
+        else:
+            message = "[{}] {} | {}: {}".format(
+                
+                "SYSTEM",
+                "Startup" + (GS.maxStatusLength - len("Startup")) * " ",
+                "Prevs" + (CE.maxEventLength - len("Prevs")) * " ",
+                message
+            )
         message = message if len(message) < 150 else message[:150].strip() + " (...)"
         
         if printLine and (CE.printAll or type in CE.printTypes): print(message)
