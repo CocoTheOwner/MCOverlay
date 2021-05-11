@@ -60,7 +60,7 @@ class ChatEvents:
 
     maxEventLength = len(lobby)
 
-    printTypes = useful
+    printTypes = chat
     logTypes = all
 
     printAll = printTypes == all
@@ -74,9 +74,31 @@ class GameStatus:
     afk = "AFK"
     maxStatusLength = len(gameLobby)
 
-class Origin:
+class GameOrigin:
     mainLobby = "MainLobby"
     gameLobby = "GameLobby"
     mainChat = "MainChat"
     gameChat = "GameChat"
     party = "Party"
+
+class SystemEvents:
+    command = "Cmd"
+    notify = "Note"
+    api = "API"
+    maxEventLength = ChatEvents.maxEventLength
+
+class SystemStatus:
+    startup = "Startup"
+    waiting = "Waiting"
+    running = "Running"
+    shutdown = "Shutdown"
+    none = "None"
+    maxStatusLength = GameStatus.maxStatusLength
+class CommandOrigin:
+    startup = "Startup"
+    autowho = "AutoWho"
+    autoleave = "AutoLeave"
+    autoplist = "AutoPList"
+    autoinvite = "AutoInvite"
+    partyleft = "PartyMemberLeft"
+    partymissing = "PartyMemberMissing"
