@@ -57,6 +57,8 @@ class API:
             file (Config): Configuration file to write results to and take existing results from
 
         """
+        uuid = None
+        stats = None
         try:
             # Lowercase playername
             player = player.lower()
@@ -81,6 +83,8 @@ class API:
         except requests.exceptions.RequestException as e:
             print("Failed player fetch for " + player)
             raise e
+        except TypeError:
+            print("Likely one of the responses failed. UUID: {}, Stats: {}".format(uuid, "None" if stats==None else stats[:100]))
         except Exception as e:
             print("An unhandled exception was raised for player: {}\nError: {}".format(player, str(type(e))))
             raise e
@@ -94,13 +98,14 @@ class API:
         Returns:
             Information message (str)
         """
+        start = time.time()
         request = self.getRequest("https://api.hypixel.net/key?key={}".format(self.token))
         if request == None:
-            return "Hypixel API: OFFLINE (no response)"
+            return "Hypixel API: OFFLINE (no response, took {}s)".format(round(time.time() - start,1))
         elif request["success"] != True:
-            return "Hypixel API: UNRESPONSIVE (response not successful: {})".format(request)
+            return "Hypixel API: UNRESPONSIVE (response not successful: {}, took {}s)".format(request, round(time.time() - start,1))
         else:
-            return "Hypixel API: ONLINE (requests: {}/{} per 60s. {} in total)".format(request["record"]["queriesInPastMin"], request["record"]["limit"], request["record"]["totalQueries"])
+            return "Hypixel API: ONLINE (requests: {}/{} per 60s. {} in total. Took {}s)".format(request["record"]["queriesInPastMin"], request["record"]["limit"], request["record"]["totalQueries"], round(time.time() - start,1))
 
     def minecraftStats(self):
         """Retrieves stats of minecraft API
@@ -108,11 +113,12 @@ class API:
         Returns:
             Information message (str)
         """
+        start = time.time()
         request = self.getRequest("https://api.mojang.com/")
         if request == None:
-            return "Minecraft API: OFFLIN (no response)"
+            return "Minecraft API: OFFLIN (no response, took {}s)".format(round(time.time() - start,1))
         else:
-            return "Minecraft API: ONLINE (version: {})".format(request["Implementation-Version"])
+            return "Minecraft API: ONLINE (version: {}, took {}s)".format(request["Implementation-Version"], round(time.time() - start,1))
 
     def hypixel(self, player, uuid):
         """Retrieves stats of player with uuid
