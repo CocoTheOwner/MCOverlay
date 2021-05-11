@@ -96,7 +96,7 @@ def loggerTasks(logger: LogMonitor):
         q = PlayerQueue()
         for player in logger.party:
             q.add(player, origin=OG.party)
-        q.add()
+        q.add(config.get("ownUsername"))
 
     # Check for autoinvite
     if len(logger.autoInvite) > 0 and autoInviteToggle:
