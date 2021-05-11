@@ -44,12 +44,18 @@
 - [ ] API Request counter and overload blocker
 	- [ ] Hypixel
 	- [ ] Minecraft
-- [ ] Upon open, disregard all entries before that timestamp (set linenumber)
 - [ ] Upkeep list of party members
 	- [ ] On party member disconnect leave lobby etc
 	- [ ] On party disconnect write message in party chat (?) (toggleable)
+	- [ ] If party size = 1 (only self), don't /p warp after autoLeave
 - [ ] Split warning system
+- [ ] Suppress keyboard input when sending a command 
+	- https://stackoverflow.com/questions/29289945/how-to-temporarily-disable-keyboard-input-using-python
 ## Completed tasks
+- [X] Upon open, disregard all entries before that timestamp (set linenumber)
+	- Improved by only discarding certain elements 
+		- lobbyname, among other things, is maintained. 
+		- Downloads are completely ignored. /who will autodownload again.
 - [X] Autowho
 	- [X] Don't use when first player in lobby
 	- ~~[ ] Maybe with party size~~
