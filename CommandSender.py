@@ -3,6 +3,13 @@ import pyperclip
 import time
 controller = Controller()
 class CommandSender:
+
+    def plist():
+        """Sends a p list command
+        """
+        CommandSender.type("/p list")
+
+
     def who():
         """Sends a who command
         """
