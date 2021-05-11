@@ -4,41 +4,74 @@ import time
 controller = Controller()
 class CommandSender:
 
-    def plist():
+    def plist(origin: str):
         """Sends a p list command
+
+        Args:
+            origin (str): The origin of the command
+
+        Returns:
+            Command information which should be printed
         """
-        CommandSender.type("/p list")
+        return CommandSender.type("/p list", origin)
 
-
-    def who():
+    def who(origin: str):
         """Sends a who command
+
+        Args:
+            origin (str): The origin of the command
+
+        Returns:
+            Command information which should be printed
         """
-        CommandSender.type("/who")
+        return CommandSender.type("/who", origin)
         
-    def leave():
+    def leave(origin: str):
         """Sends a leave command
+
+        Args:
+            origin (str): The origin of the command
+
+        Returns:
+            Command information which should be printed
         """
-        CommandSender.type("/l")
+        return CommandSender.type("/l", origin)
         
-    def pwarp():
+    def pwarp(origin: str):
         """Sends a p warp command
-        """
-        CommandSender.type("/p warp")
 
-    def pleave():
+        Args:
+            origin (str): The origin of the command
+
+        Returns:
+            Command information which should be printed
+        """
+        return CommandSender.type("/p warp", origin)
+
+    def pleave(origin: str):
         """Leaves and warps the party after
-        """
-        CommandSender.leave()
-        time.sleep(0.5)
-        CommandSender.pwarp()
 
-    def type(line: str):
+        Args:
+            origin (str): The origin of the command
+
+        Returns:
+            Command information which should be printed
+        """
+        CommandSender.leave(origin)
+        time.sleep(0.5)
+        CommandSender.pwarp(origin)
+        return "Sent commands ({}): /l and /p warp".format(origin)
+
+    def type(line: str, origin: str):
         """Writes a line using the virtual keyboard
 
         Args:
             line (str): The line to write
+            origin (str): The origin of the command
+
+        Returns:
+            Command information which should be printed
         """
-        print("Sending command: {}".format(line))
         pyperclip.copy(line)
         controller.press(Key.enter)
         time.sleep(0.05)
@@ -55,3 +88,4 @@ class CommandSender:
         time.sleep(0.1)
         controller.press(Key.enter)
         controller.release(Key.enter)
+        return "Sent command ({}): {}".format(origin, line)
