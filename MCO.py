@@ -1,3 +1,4 @@
+from PlayerQueue import PlayerQueue
 from Enums import Origin as OG
 from API import API
 from LogMonitor import LogMonitor
@@ -10,12 +11,10 @@ print("Initalizing MCO...")
 # Configs and controller
 print("Loading configuration")
 config = Config('./config/config.json', {
-    "ownUsers": [
-        "cocodef9"
-    ],
+    "ownUsername": "cocodef9",
     "token": "206baa63-dcd2-47f3-b197-b43de4e3301f",
     "logFolder": "C:\\Users\\sjoer\\Appdata\\Roaming\\Minecraft 1.8.9\\logs\\latest.log",
-    "playerDetection": {
+    "downloadStatsOfPlayersIn": {
         OG.mainChat: True,
         OG.mainLobby: True,
         OG.gameChat: True,
@@ -39,7 +38,7 @@ controller = Config('./config/controller.json', {
 
 # Create a configuration file logger
 print("Loading log monitor")
-logger = LogMonitor(config.get("logFolder"), config.get("ownUsers"), True)
+logger = LogMonitor(config.get("logFolder"), config.get("ownUsername"), True)
 
 # Create an API object
 print("Loading API")
@@ -94,7 +93,10 @@ def loggerTasks(logger: LogMonitor):
     # Check for stats reset (/who)
     if logger.resetStats:
         logger.resetStats = False
-        # TODO: Reset stats of players gathered once system in place
+        q = PlayerQueue()
+        for player in logger.party:
+            q.add(player, origin=OG.party)
+        q.add()
 
     # Check for autoinvite
     if len(logger.autoInvite) > 0 and autoInviteToggle:
@@ -135,7 +137,7 @@ def startMCO():
 
         # Update player definitions
         if config.get("enableStatistics-Do-Not-Disable!"):
-            pd = config.get("playerDetection")
+            pd = config.get("downloadStatsOfPlayersIn")
             q = {}
             queue = logger.queue.get()
             for player in queue.keys():

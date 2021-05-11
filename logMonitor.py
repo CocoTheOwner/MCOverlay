@@ -10,7 +10,7 @@ class LogMonitor:
 
     isPartyLeader = None
     lobbyName = None
-    mainUsers = None
+    ownUsername = None
     newToken = None
     debug = None
 
@@ -36,9 +36,9 @@ class LogMonitor:
     queue = PlayerQueue()
     left = PlayerQueue()
 
-    def __init__(self, logFilePath: str, mainUsers, debug = False):
+    def __init__(self, logFilePath: str, ownUsername, debug = False):
         self.logFilePath = logFilePath
-        self.mainUsers = mainUsers
+        self.ownUsername = ownUsername
         self.debug = debug
 
     def resetExposed(self):
@@ -202,7 +202,7 @@ class LogMonitor:
             message = message.replace("  ", " ")
 
         # Check if the player is the main player
-        if user in self.mainUsers:
+        if user == self.ownUsername:
             return
             
         # Add the player to the playerqueue
@@ -211,10 +211,9 @@ class LogMonitor:
         rank = "[" + rank + "] " if rank != "NON" else ""
 
         for word in message.strip().split(" "):
-            for player in self.mainUsers:
-                if word.count(player) > 0:
-                    # This word mentions one of the main users' usernames, invite this player!
-                    self.autoInvite.append(user)
+            if word.count(self.ownUsername) > 0:
+                # This word mentions one of the main users' usernames, invite this player!
+                self.autoInvite.append(user)
 
 
         self.file(CE.chat, "[{}] {}{}: {}".format(stars, rank, user, message.strip()))
@@ -261,7 +260,7 @@ class LogMonitor:
 
         name = line.replace("username fell into the void.", "").strip()
 
-        if not name in self.mainUsers:
+        if not name == self.ownUsername:
             # Do not process statistics (useless)
             self.file(CE.removed, line)
             
@@ -284,7 +283,7 @@ class LogMonitor:
 
         name = line.removeprefix("BED DESTRUCTION > ").removesuffix("!").split(" ")[-1]
 
-        if name not in self.mainUsers:
+        if name != self.ownUsername:
             self.file(CE.removed, line)
 
         else:
@@ -388,7 +387,7 @@ class LogMonitor:
             name1 = line[1]
             rank1 = "[" + x + "] "
 
-        if name1 in self.mainUsers:
+        if name1 == self.ownUsername:
             name1 = "You"
             rank1 = ""
 
@@ -417,7 +416,7 @@ class LogMonitor:
         else:
             name = x[1]
             rank = rank + " "
-        if name in self.mainUsers:
+        if name == self.ownUsername:
             self.isPartyLeader = True
         
         self.file(CE.party, "Party List:")
@@ -551,7 +550,7 @@ class LogMonitor:
             name1 has promoted name2 to Party Leader
         """
         x = line.replace(" has promoted", "").removesuffix(" to Party Leader").split(" ")
-        if x[-1] in self.mainUsers:
+        if x[-1] == self.ownUsername:
             self.isPartyLeader = True
         else:
             self.isPartyLeader = False
@@ -571,10 +570,10 @@ class LogMonitor:
             rank2 = "[" + rank2 + "] "
             name2 = x[-1]
 
-        if name1 in self.mainUsers:
+        if name1 == self.ownUsername:
             rank1 = ""
             name1 = "You"
-        if name2 in self.mainUsers:
+        if name2 == self.ownUsername:
             rank2 = ""
             name2 = "you"
 
@@ -591,7 +590,7 @@ class LogMonitor:
             The party was transferred to name1 by name2
         """
         x = line.removeprefix("The party was transferred to ").replace(" by", "").split(" ")
-        if x[-2] in self.mainUsers:
+        if x[-2] == self.ownUsername:
             self.isPartyLeader = True
         else:
             self.isPartyLeader = False
@@ -611,10 +610,10 @@ class LogMonitor:
             rank2 = "[" + rank2 + "] "
             name2 = x[-1]
 
-        if name1 in self.mainUsers:
+        if name1 == self.ownUsername:
             rank1 = ""
             name1 = "you"
-        if name2 in self.mainUsers:
+        if name2 == self.ownUsername:
             rank2 = ""
             name2 = "you"
 
@@ -662,7 +661,7 @@ class LogMonitor:
         joinNumber = int(x[0])
         lobbyCap = int(x[1])
 
-        if name in self.mainUsers and joinNumber > 1:
+        if name == self.ownUsername and joinNumber > 1:
                 self.autoWho = True
 
         # Store player by username
@@ -732,9 +731,6 @@ class LogMonitor:
         Example:
             username has quit!
             username has disconnected
-
-        Status:
-            unchanged
         """
 
         # Remove one player from the lobby count
@@ -747,7 +743,7 @@ class LogMonitor:
 
         self.file(CE.quit, "{} ({}/{})".format(name, self.playersInLobby, self.lobbyCap))
 
-        if name in self.mainUsers:
+        if name == self.ownUsername:
             self.file(CE.lobby, "Left lobby [{}]".format(self.lobbyName))
 
 

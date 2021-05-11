@@ -18,8 +18,6 @@ class API:
 
     stats = {}
 
-    # TODO: Queue party and self for statistics refresh when requested
-
     def __init__(self, token: str, debug = False):
         self.token = token
         self.debug = debug
