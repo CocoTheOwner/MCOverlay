@@ -6,6 +6,8 @@ class Config:
     configFile = "./config/config.txt"
     defaultConfig = {}
     config = {}
+    modificationTime = None
+
     def __init__(self, path, config):
         self.defaultConfig = config
         self.configFile = path
@@ -13,6 +15,13 @@ class Config:
         self.load()
         self.ensureFileValid()
         self.save()
+        self.modificationTime = os.path.getmtime(self.configFile)
+
+    def hotload(self):
+        if self.modificationTime != os.path.getmtime(self.configFile):
+            self.modificationTime = os.path.getmtime(self.configFile)
+            self.load()
+            print("Hotloaded config at {}".format(self.configFile))
 
     def get(self, item):
         return self.config[item]
@@ -35,6 +44,7 @@ class Config:
     def save(self):
         with open(self.configFile, 'w') as f:
             json.dump(self.config, f, ensure_ascii=False, indent=4)
+        self.modificationTime = os.path.getmtime(self.configFile)
 
     def ensureFileExistNotEmpty(self):
         if not path.exists(self.configFile.removesuffix(self.configFile.split("/")[-1])):
