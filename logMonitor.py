@@ -30,6 +30,7 @@ class LogMonitor:
     resetStats = False
 
     autoInvite = []
+    failedWho = []
 
     game = []
     party = []
@@ -115,6 +116,8 @@ class LogMonitor:
         """
         if line.startswith("[") and line.split(" ")[0].endswith("?]") and (line.split(" ")[1].endswith(":") or line.split(" ")[2].endswith(":")) and line.count(" ") > 1:
             self.lobbyChatMessage(line)
+        elif (line.split(" ")[0].endswith(":") or line.split(" ")[1].endswith(":")) and line.count(" ") > 1 and (self.status == GS.inGame or self.status == GS.gameLobby):
+            self.gameChatMessage(line)
         elif line.startswith("You are currently connected to server ") or line.startswith("Sending you to") or line.startswith("Taking you to"):
             self.moveLobby(line)
         elif line.endswith("fell into the void."):
@@ -206,7 +209,7 @@ class LogMonitor:
 
         # Check if the player is the main player
         if user == self.ownUsername:
-            return
+            self.file(CE.chat, "[{}] {}{}: {}".format(stars, rank, user, message.strip()))
             
         # Add the player to the playerqueue
         self.queue.add(user, rank, stars, OG.mainChat)
@@ -221,6 +224,49 @@ class LogMonitor:
 
         self.file(CE.chat, "[{}] {}{}: {}".format(stars, rank, user, message.strip()))
     
+    def gameChatMessage(self, line: str):
+        """Process a game chat event
+
+        Args:
+            line (str): Line to process
+
+        Examples:
+            username: message may contain spaces
+            [RANK] username: message may contain spaces
+
+        Status:
+            mainLobby
+        """
+        self.status = GS.mainLobby
+
+        split = line.split(" ")
+
+        # Retrieve rank, username and message
+        if split[0].endswith(":"):
+            rank = "NON"
+            user = split[0].removesuffix(":")
+            message = " ".join(split[1:])
+        else:
+            rank = LogMonitor.getRank(split[0])
+            user = split[1].removesuffix(":")
+            message = " ".join(split[2:])
+
+        # Clean the message
+        while (message.count("  ") > 0):
+            message = message.replace("  ", " ")
+
+        # Check if the player is the main player
+        if user == self.ownUsername:
+            self.file(CE.chat, "{}{}: {}".format(rank, user, message.strip()))
+            
+        rank = "[" + rank + "] " if rank != "NON" else ""
+
+        if (message.count("/who") > 0 and message.count(" ") < 2) or\
+            (message.count("who") > 0 and message.count(" ") == 0):
+            self.failedWho.append(user)
+
+        self.file(CE.chat, "{}{}: {}".format(rank, user, message.strip()))
+
     def moveLobby(self, line: str):
         """Process a lobby move event
 

@@ -3,7 +3,6 @@
 
 # Task Checklist
 ## Backend
-- [ ] Mistake "/who" detection and marking
 - [ ] Autoinvite
 	- [X] Toggle
 	- [ ] Check stats
@@ -26,6 +25,7 @@
 - [ ] Dynamic game type selection system
 	- [ ] Multiple games
 - [ ] Version in title of program
+- [ ] Finish TODO's
 ## Completed tasks
 - [X] Upon open, disregard all entries before that timestamp (set linenumber)
 	- Improved by only discarding certain elements 
@@ -77,3 +77,4 @@
 - [X] Refresh player statistics at the end of the game
 - [X] Party alarm
 	- [X] Leave gamelobby if party member disconnects or leaves
+- [X] Mistake "/who" detection and marking

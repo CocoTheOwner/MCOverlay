@@ -95,6 +95,12 @@ def loggerTasks(logger: LogMonitor):
             CS.leave()
             time.sleep(0.25)
             CS.pwarp()
+
+    if len(logger.failedWho) > 0:
+        for name in logger.failedWho:
+            # TODO: Add to statistics flags
+            print("Failed /who by: " + name)
+        logger.failedWho = []
         
     # Check for stats reset (/who)
     if logger.resetStats:
