@@ -8,10 +8,8 @@
 - [ ] Levelhead view
 
 ## Specific tasks
-- [ ] Selectable statistics in table
-	- [ ] Index score
-	- [ ] Dynamic system showing all
-- [ ] GUI
+
+### Backend
 - [ ] Mistake "/who" detection and marking
 - [ ] Party alarm
 	- [ ] Alarm when not all party members in lobby (detect amount)
@@ -27,30 +25,33 @@
 	- [ ] Party detection
 	- [ ] Guild detection
 	- [X] Staff detection
-	- [ ] Party list detection
-		- [ ] Party promotion detection (who is leader, moderator, GUI option)
+	- [X] Party list detection
+		- [X] Party promotion detection (who is leader, moderator, GUI option)
 	- [X] Who-command detection
 - [ ] Error and warning system for API
 	- [ ] Timeout
 	- [X] API overload (diff MCAPI / HyAPI)
-- [ ] Dynamic game type selection system
-	- [ ] Multiple games
-- [ ] Version in title of program
 - [ ] Autoinvite
 	- [X] Toggle
 	- [ ] Check stats
 		- [ ] Configurable
 	- [X] Name mention
-- [ ] API Request counter and overload blocker
-	- [ ] Hypixel
-	- [ ] Minecraft
-- [ ] Upkeep list of party members
-	- [ ] On party member disconnect leave lobby etc
-	- [ ] On party disconnect write message in party chat (?) (toggleable)
-	- [ ] If party size = 1 (only self), don't /p warp after autoLeave
-- [ ] Split warning system
 - [ ] Suppress keyboard input when sending a command 
 	- https://stackoverflow.com/questions/29289945/how-to-temporarily-disable-keyboard-input-using-python
+### Frontend
+- [ ] GUI Layout
+- [ ] Selectable statistics in table
+	- [ ] Index score
+	- [ ] Dynamic system showing all
+- [ ] Navigate to log file
+	- Perhaps navigate to C:/Users, let the user pick a folder.
+	- Then see if there's a .minecraft folder in */AppData/
+	- If there is, just pick that, go into */logs/latest.log
+	- If there is not, let the user select a minecraft game folder manually
+	- Then check if there exists a logs folder, if not, return to previous step ^
+- [ ] Dynamic game type selection system
+	- [ ] Multiple games
+- [ ] Version in title of program
 ## Completed tasks
 - [X] Upon open, disregard all entries before that timestamp (set linenumber)
 	- Improved by only discarding certain elements 
@@ -78,3 +79,7 @@
 	- [x] Save uuid->player and player->uuid tables between runs
 - [x] Get API token from file
 - [x] Use API token and UUID to retrieve player information from Hypixel API
+- [X] Upkeep list of party members
+	- [X] On party member disconnect leave lobby etc
+	- [X] On party disconnect write message in party chat (?) (toggleable)
+	- [X] If party size = 1 (only self), don't /p warp after autoLeave
