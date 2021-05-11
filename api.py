@@ -1,6 +1,4 @@
-import re
 import time, json, requests
-from requests.models import Response
 from Config import Config
 from json.decoder import JSONDecodeError
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -17,6 +15,12 @@ class API:
     uuidsFile.load()
 
     stats = {}
+
+    # These store an array of timestamps. The length is the amount of requests.
+    MCAPIRequests = []
+    MCAPIRequestsMax = 600 # Per 10 minutes.
+    HYAPIRequests = []
+    HYAPIRequestsMax = 120 # Per minute.
 
     def __init__(self, token: str, debug = False):
         self.token = token
@@ -94,26 +98,27 @@ class API:
             Information message (str)
         """
         start = time.time()
-        request = self.getRequest("https://api.hypixel.net/key?key={}".format(self.token))
-        if request == None:
-            return "Hypixel API: OFFLINE (no response, took {}s)".format(round(time.time() - start,1))
-        elif request["success"] != True:
-            return "Hypixel API: UNRESPONSIVE (response not successful: {}, took {}s)".format(request, round(time.time() - start,1))
+        if self.updateHYAPIRequests():
+            self.HYAPIRequests.append(start)
+            request = self.getRequest("https://api.hypixel.net/key?key={}".format(self.token))
+            if request == None:
+                return "Hypixel API: OFFLINE (no response, took {}s)".format(round(time.time() - start,1))
+            elif request["success"] != True:
+                return "Hypixel API: UNRESPONSIVE (response not successful: {}, took {}s)".format(request, round(time.time() - start,1))
+            else:
+                if len(self.HYAPIRequests) - 1 != request["record"]["queriesInPastMin"]:
+                    print("HYAPIRequests may overflow. Correcting. MCO's count: {}, Hypixel's count: {})".format(len(self.HYAPIRequests), request["record"]["queriesInPastMin"]))
+                    for _ in range(0, len(self.HYAPIRequests) - 1 - request["record"]["queriesInPastMin"]):
+                        self.HYAPIRequests.pop()
+                    for _ in range(0, request["record"]["queriesInPastMin"] - len(self.HYAPIRequests) + 1):
+                        self.HYAPIRequests.append(time.time())
+                if self.HYAPIRequestsMax != request["record"]["limit"]:
+                    print("HYAPIRequests cap is incorrect on our end. Correcting. Our cap: {}, Hypixel's cap: {}".format(self.HYAPIRequestsMax, request["record"]["limit"]))
+                    self.HYAPIRequestsMax = request["record"]["limit"]
+                return "Hypixel API: ONLINE (requests: {}/{} per 60s. {} in total. Took {}s)".format(len(self.HYAPIRequests), self.HYAPIRequestsMax, request["record"]["totalQueries"], round(time.time() - start,1))
         else:
-            return "Hypixel API: ONLINE (requests: {}/{} per 60s. {} in total. Took {}s)".format(request["record"]["queriesInPastMin"], request["record"]["limit"], request["record"]["totalQueries"], round(time.time() - start,1))
-
-    def minecraftStats(self):
-        """Retrieves stats of minecraft API
-
-        Returns:
-            Information message (str)
-        """
-        start = time.time()
-        request = self.getRequest("https://api.mojang.com/")
-        if request == None:
-            return "Minecraft API: OFFLIN (no response, took {}s)".format(round(time.time() - start,1))
-        else:
-            return "Minecraft API: ONLINE (version: {}, took {}s)".format(request["Implementation-Version"], round(time.time() - start,1))
+            print("Could not download API usage for because the API is overloaded: {}/{}".format(len(self.HYAPIRequests), self.HYAPIRequestsMax))
+            
 
     def hypixel(self, player, uuid):
         """Retrieves stats of player with uuid
@@ -125,30 +130,38 @@ class API:
         Returns:
             None if failed, dict with data if successful
         """
-        if self.debug: print("Downloading stats of {} ({})".format(player, uuid))
-        request = self.getRequest("https://api.hypixel.net/player?key={}&uuid={}".format(self.token, uuid))
-        if request != None and "player" in request:
-            if self.debug: print(player + "'s stats download successful")
-            self.stats[uuid] = request["player"]
-            if self.debug: self.verifyPlayername(player, uuid, request["player"]["playername"], request["player"]["uuid"])
-            return request["player"]
-        elif self.debug and request != None:
-            print("Error when getting Stats for {}: {}".format(player, request["cause"] if request != None and "cause" in request else ("Request is 'None'" if request == "None" else request)))
+        if self.updateHYAPIRequests():
+            self.HYAPIRequests.append(time.time())
+            if self.debug: print("Downloading stats of {} ({})".format(player, uuid))
+            request = self.getRequest("https://api.hypixel.net/player?key={}&uuid={}".format(self.token, uuid))
+            if request != None and "player" in request:
+                if self.debug: print(player + "'s stats download successful")
+                self.stats[uuid] = request["player"]
+                if self.debug: self.verifyPlayername(player, uuid, request["player"]["playername"], request["player"]["uuid"])
+                return request["player"]
+            elif self.debug and request != None:
+                print("Error when getting Stats for {}: {}".format(player, request["cause"] if request != None and "cause" in request else ("Request is 'None'" if request == "None" else request)))
+        else:
+            print("Could not download stats for {} ({}) because the API is overloaded: {}/{}".format(player, uuid, len(self.HYAPIRequests), self.HYAPIRequestsMax))
+            print("Warning, this player is completely ignored and will not show up on your statistics list!")
+            return None
 
-    def verifyPlayername(self, name1, uuid1, name2, uuid2):
-        if name1 not in self.uuids:
-            print("UUID of player entered is somehow not in our list. This should never occur, if it does, something is very broken: {}".format(name1))
-        elif name2 not in self.uuids:
-            print("UUID of playername returned by hypixel not in our list. Likely due to namechange: {}".format(name2))
-        elif name1 != name2:
-            if uuid1 != uuid2:
-                print("UUID of playername returned by Hypixel's API not in our log: Lookup {} / Hypixel {} ({})".format(uuid1, uuid2, name1))
-            elif self.uuids[name1] == self.uuids[name2]:
-                print("Likely detected a playername change: Lookup {} / Hypixel {} (uuid: {})".format(name1, name2, uuid1))
+    def minecraftStats(self):
+        """Retrieves stats of minecraft API
+
+        Returns:
+            Information message (str)
+        """
+        start = time.time()
+        if self.updateMCAPIRequests():
+            self.MCAPIRequests.append(time.time())
+            request = self.getRequest("https://api.mojang.com/")
+            if request == None:
+                return "Minecraft API: OFFLINE (no response, took {}s)".format(round(time.time() - start,1))
             else:
-                print("Name used in UUID lookup not the same as returned from Hypixel's API: Lookup {} / Hypixel {} ({})".format(uuid1, uuid2, name1))
-        elif uuid1 != uuid2:
-            print("Player UUID returned by Hypixel's API not the same as used for lookup, somehow: Lookup {} / Hypixel {} ({})".format(uuid1, uuid2, name1))
+                return "Minecraft API: ONLINE (version: {}, {}/{} requests per 600s. Took {}s)".format(request["Implementation-Version"], len(self.MCAPIRequests), self.MCAPIRequestsMax, round(time.time() - start,1))
+        else:
+            print("Could not download API usage for because the API is overloaded: {}/{}".format(len(self.MCAPIRequests), self.MCAPIRequestsMax))
 
     def minecraft(self, username):
         """Retrieves UUID of a player
@@ -164,15 +177,50 @@ class API:
         if username in self.uuids:
             return self.uuids[username]
         
-        # Get UUID from server
-        #if self.debug: print("Downloading UUID of {}".format(username))
-        request = self.getRequest("https://api.mojang.com/users/profiles/minecraft/" + username)
-        if request != None and not 'error' in request:
-            self.uuids[username] = request["id"]
-            return request["id"] 
+        if self.updateMCAPIRequests():
+            self.MCAPIRequests.append(time.time())
+            # Get UUID from server
+            #if self.debug: print("Downloading UUID of {}".format(username))
+            request = self.getRequest("https://api.mojang.com/users/profiles/minecraft/" + username)
+            if request != None and not 'error' in request:
+                self.uuids[username] = request["id"]
+                return request["id"] 
+            else:
+                self.uuids[username] = "NICK"
+                return "NICK"
         else:
-            self.uuids[username] = "NICK"
-            return "NICK"
+            print("Could not download uuid for {} because the API is overloaded: {}/{}".format(username, len(self.MCAPIRequests), self.MCAPIRequestsMax))
+            print("Warning, this player is completely ignored and will not show up on your statistics list!")
+            return None
+
+    def updateHYAPIRequests(self):
+        now = time.time()
+        for timeStamp in self.HYAPIRequests:
+            if now - timeStamp > 60:
+                self.HYAPIRequests.remove(time)
+        return self.HYAPIRequestsMax > len(self.HYAPIRequests)
+
+    def updateMCAPIRequests(self):
+        now = time.time()
+        for timeStamp in self.MCAPIRequests:
+            if now - timeStamp > 600:
+                self.MCAPIRequests.remove(time)
+        return self.MCAPIRequestsMax > len(self.MCAPIRequests)
+
+    def verifyPlayername(self, name1, uuid1, name2, uuid2):
+        if name1 not in self.uuids:
+            print("UUID of player entered is somehow not in our list. This should never occur, if it does, something is very broken: {}".format(name1))
+        elif name2 not in self.uuids:
+            print("UUID of playername returned by hypixel not in our list. Likely due to namechange: {}".format(name2))
+        elif name1 != name2:
+            if uuid1 != uuid2:
+                print("UUID of playername returned by Hypixel's API not in our log: Lookup {} / Hypixel {} ({})".format(uuid1, uuid2, name1))
+            elif self.uuids[name1] == self.uuids[name2]:
+                print("Likely detected a playername change: Lookup {} / Hypixel {} (uuid: {})".format(name1, name2, uuid1))
+            else:
+                print("Name used in UUID lookup not the same as returned from Hypixel's API: Lookup {} / Hypixel {} ({})".format(uuid1, uuid2, name1))
+        elif uuid1 != uuid2:
+            print("Player UUID returned by Hypixel's API not the same as used for lookup, somehow: Lookup {} / Hypixel {} ({})".format(uuid1, uuid2, name1))
 
     def getRequest(self, link):
         """Retrieves request from webpage

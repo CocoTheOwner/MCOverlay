@@ -61,13 +61,14 @@ class MCO:
             False
         )
         self.status = SS.oldLogs
-        self.file(SE.notify, "Going through old logs (if there are any)")
+        self.file(SE.notify, "Loading old logs (if any)")
         self.logger.tick(True)
         self.logger.tick(True)
         self.logger.resetExposed()
+        self.status = SS.startup
+        self.file(SE.notify, "Loaded old logs")
 
         # API
-        self.status = SS.startup
         self.file(SE.notify, "Loading API")
         self.api = API(self.config.get("token"), True)
         self.file(SE.api, self.api.hypixelStats())
@@ -90,6 +91,7 @@ class MCO:
         
         cycle = 0
 
+        # Main loop
         self.file(SE.notify, "Starting main loop")
         while True:
 
@@ -110,43 +112,23 @@ class MCO:
             self.loggerTasks()
 
             # Update player definitions
-            if self.config.get("enableStatistics-Do-Not-Disable!"):
-                pd = self.config.get("downloadStatsOfPlayersIn")
-                q = {}
-                queue = self.logger.queue.get()
-                for player in queue.keys():
-                    origin = queue[player]["origin"]
-                    if ((origin == GO.mainChat and pd[GO.mainChat]) or
-                        (origin == GO.mainLobby and pd[GO.mainLobby]) or
-                        (origin == GO.gameChat and pd[GO.gameChat]) or
-                        (origin == GO.gameLobby and pd[GO.gameLobby]) or
-                        (origin == GO.party)):
-                        q[player] = queue[player]
-                self.api.fetch(q)
+            self.statisticsTask()
 
             # Check controller
-            self.controller.load()
-            if self.controller.get("stop"):
-                self.controller.set("stop", False)
-                self.controller.save()
-                break
-            if self.controller.get("getAPI"):
-                self.controller.set("getAPI", False)
-                self.controller.save()
-                self.file(SE.api, self.api.hypixelStats())
-                self.file(SE.api, self.api.minecraftStats())
+            if self.controllerTask(): break
 
+            # Wait a short while before refreshing
+            # Note: This can be decreased to increase responsiveness,
+            #       but it may break certain elements of the program.
+            # Use at your own risk
             time.sleep(0.1)
+
+        # Shutdown
         self.status = SS.shutdown
         self.file(SE.notify, "Closing MCO")
         exit()
         
     def loggerTasks(self):
-        """Runs logger tasks
-        
-        Args:
-            logger (LogMonitor): Logger to check
-        """
         # Check for token update
         if self.logger.newToken != None:
             self.api.token = self.logger.newToken
@@ -189,6 +171,7 @@ class MCO:
                 time.sleep(0.25)
                 CS.pwarp(CO.partyleft)
 
+        # Check for failed autowho's by others
         if len(self.logger.failedWho) > 0:
             for name in self.logger.failedWho:
                 # TODO: Add to statistics flags
@@ -212,6 +195,34 @@ class MCO:
                     CS.type("/p " + player, CO.autoinvite)
                     #TODO: Add auto statistics check and invite
 
+    def controllerTask(self):
+        self.controller.load()
+        if self.controller.get("stop"):
+            self.controller.set("stop", False)
+            self.controller.save()
+            return True
+        if self.controller.get("getAPI"):
+            self.controller.set("getAPI", False)
+            self.controller.save()
+            self.file(SE.api, self.api.hypixelStats())
+            self.file(SE.api, self.api.minecraftStats())
+            return False
+
+    def statisticsTask(self):
+        if self.config.get("enableStatistics-Do-Not-Disable!"):
+            pd = self.config.get("downloadStatsOfPlayersIn")
+            q = {}
+            queue = self.logger.queue.get()
+            for player in queue.keys():
+                origin = queue[player]["origin"]
+                if ((origin == GO.mainChat and pd[GO.mainChat]) or
+                    (origin == GO.mainLobby and pd[GO.mainLobby]) or
+                    (origin == GO.gameChat and pd[GO.gameChat]) or
+                    (origin == GO.gameLobby and pd[GO.gameLobby]) or
+                    (origin == GO.party)):
+                    q[player] = queue[player]
+            self.api.fetch(q)
+
     def file(self, type: str, line: str):
         """Prints a line to console in the proper format
         
@@ -226,6 +237,7 @@ class MCO:
         )
         line = line if len(line) < 150 else line[:150].strip() + " (...)"
         print(line)
+
 
 if __name__ == '__main__':
     MCO().start()

@@ -4,8 +4,6 @@
 # Task Checklist
 ## Backend
 - [ ] Statistics to SQL
-- [ ] API Load
-	- [ ] API overload handling
 - [ ] Statistics check bypass whitelist
 - [ ] AutoObby
 - [ ] AutoTrash
@@ -92,3 +90,5 @@
 - [X] Autoinvite
 	- [X] Toggle
 	- [X] Name mention
+- [X] Monitor API Load
+	- [X] API overload handling
