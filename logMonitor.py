@@ -36,6 +36,15 @@ class LogMonitor:
         self.mainUsers = mainUsers
         self.debug = debug
 
+    def resetExposed(self):
+        self.autoWho = False
+        self.autoLeave = False
+        self.autoLeavePartyLeave = False
+        self.resetStats = False
+        self.autoInvite = []
+        self.left = PlayerQueue()
+        self.queue = PlayerQueue()
+
     def tick(self):
         """Ticks the logger. Only ticks if there is a log change.
         """
