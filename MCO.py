@@ -71,6 +71,11 @@ def loggerTasks(logger: LogMonitor):
         logger.autoPartyList = False
         if config.get("autoCommands")["autoPList"]: CS.plist()
 
+    # Check for logger party member missing tier 2
+    if logger.partyMemberMissingTwo:
+        logger.partyMemberMissingTwo = False
+        if config.get("leavePartyMemberMissing"): CS.pleave()
+
     # Check for autoleave
     if logger.autoLeave:
         logger.autoLeave = False
