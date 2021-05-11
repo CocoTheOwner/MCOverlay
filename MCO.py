@@ -15,11 +15,19 @@ config = Config('./config/config.json', {
     ],
     "token": "206baa63-dcd2-47f3-b197-b43de4e3301f",
     "logFolder": "C:\\Users\\sjoer\\Appdata\\Roaming\\Minecraft 1.8.9\\logs\\latest.log",
-    "autoWho": True,
-    "autoInvite": True,
-    "autoLeave": True,
-    "autoPWarp": True,
-    "autoLeavePartyDC": True,
+    "playerDetection": {
+        "mainLobbyChat": True,
+        "mainLobbyJoin": True,
+        "gameLobby": True
+    },
+    "autoCommands": {
+        "autoWho": True,
+        "autoInvite": True,
+        "autoLeave": True,
+        "autoPWarp": True,
+        "autoPList": True,
+        "autoLeavePartyDC": True
+    },
     "enableStatistics-Do-Not-Disable!": True
 })
 print("Loading controller")
@@ -38,10 +46,74 @@ api = API(config.get("token"), True)
 
 # TODO: Add to GUI
 autoInviteToggle = True
+
+def loggerTasks(logger: LogMonitor):
+    """Runs logger tasks
     
+    Args:
+        logger (LogMonitor): Logger to check
+    """
+    # Check for token update
+    if logger.newToken != None:
+        api.token = logger.newToken
+        config.set("token", logger.newToken)
+        config.save()
+        logger.newToken = None
+
+    # Check for autowho
+    if logger.autoWho:
+        logger.autoWho = False
+        if config.get("autoCommands")["autoWho"]: CS.who()
+
+    # Check for autoplist
+    if logger.autoPartyList:
+        logger.autoPartyList = False
+        if config.get("autoCommands")["autoPList"]: CS.plist()
+
+    # Check for autoleave
+    if logger.autoLeave:
+        logger.autoLeave = False
+        time.sleep(2)
+        if config.get("autoCommands")["autoLeave"]: 
+            CS.leave()
+            if config.get("autoCommands")["autoPWarp"]:
+                time.sleep(0.5)
+                CS.pwarp()
+        elif config.get("autoCommands")["autoPWarp"]:
+            CS.pwarp()
+
+    # Check for party member DC
+    if logger.autoLeavePartyLeave:
+        logger.autoLeavePartyLeave = False
+        if config.get("autoCommands")["autoLeavePartyDC"]:
+            CS.leave()
+            time.sleep(0.25)
+            CS.pwarp()
+        
+    # Check for stats reset (/who)
+    if logger.resetStats:
+        logger.resetStats = False
+        # TODO: Reset stats of players gathered once system in place
+
+    # Check for autoinvite
+    if len(logger.autoInvite) > 0 and autoInviteToggle:
+        inv = logger.autoInvite.copy()
+        logger.autoInvite = []
+        if config.get("autoCommands")["autoInvite"]:
+            for player in inv:
+                CS.type("/p " + player)
+                #TODO: Add auto statistics check and invite
+
 # Main loop
 def startMCO():
+    
+    time.sleep(1)
+    CS.plist()
+    time.sleep(0.25)
+    CS.who()
+    
     cycle = 0
+
     print("Starting main loop")
     while True:
 
@@ -57,51 +129,8 @@ def startMCO():
         # See if there are config changes
         config.hotload()
 
-        # Check for token update
-        if logger.newToken != None:
-            api.token = logger.newToken
-            config.set("token", logger.newToken)
-            config.save()
-            logger.newToken = None
-
-        # Check for autowho
-        if logger.autoWho:
-            logger.autoWho = False
-            if config.get("autoWho"): CS.who()
-
-        # Check for autoleave
-        if logger.autoLeave:
-            logger.autoLeave = False
-            time.sleep(2)
-            if config.get("autoLeave"): 
-                CS.leave()
-                if config.get("autoPWarp"):
-                    time.sleep(0.5)
-                    CS.pwarp()
-            elif config.get("autoPWarp"):
-                CS.pwarp()
-
-        # Check for party member DC
-        if logger.autoLeavePartyLeave:
-            logger.autoLeavePartyLeave = False
-            if config.get("autoLeavePartyDC"):
-                CS.leave()
-                time.sleep(0.25)
-                CS.pwarp()
-            
-        # Check for stats reset (/who)
-        if logger.resetStats:
-            logger.resetStats = False
-            # TODO: Reset stats of players gathered once system in place
-
-        # Check for autoinvite
-        if len(logger.autoInvite) > 0 and autoInviteToggle:
-            inv = logger.autoInvite.copy()
-            logger.autoInvite = []
-            if config.get("autoInvite"):
-                for player in inv:
-                    CS.type("/p " + player)
-                    #TODO: Add auto statistics check and invite
+        # Check for logger tasks
+        loggerTasks(logger)
 
         # Update player definitions
         if config.get("enableStatistics-Do-Not-Disable!"):
@@ -122,6 +151,7 @@ def startMCO():
         
 
         time.sleep(0.1)
+    print("Closing MCO")
     exit()
 
 if __name__ == '__main__':
@@ -131,10 +161,12 @@ if __name__ == '__main__':
     print(api.getApiStatus())
     
     # Tick the logger once to pass any entries existing before starting the overlay
+    print("Processing potentially existing log files")
     logger.tick()
     logger.tick()
     
     # Reset logger values
     print("Resetting log file entries")
     logger.resetExposed()
+
     startMCO()
