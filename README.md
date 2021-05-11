@@ -2,14 +2,7 @@
 *A blazing fast overlay to never get sniped again!*
 
 # Task Checklist
-
-## General tasks
-- [ ] Table view
-- [ ] Levelhead view
-
-## Specific tasks
-
-### Backend
+## Backend
 - [ ] Mistake "/who" detection and marking
 - [ ] Party alarm
 	- [ ] Alarm when not all party members in lobby (detect amount)
@@ -19,7 +12,7 @@
 	- [ ] Check stats
 		- [ ] Configurable
 	- [X] Name mention
-### Frontend
+## Frontend
 - [ ] GUI Layout
 - [ ] Selectable statistics in table
 	- [ ] Index score
