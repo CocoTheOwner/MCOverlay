@@ -1,42 +1,48 @@
+from PlayerQueue import PlayerQueue
 from API import API
 from LogMonitor import LogMonitor
 from CommandSender import CommandSender as CS
 from Config import Config
 import time
 
+print("Initalizing MCO...")
+
 # Configs and controller
+print("Loading configuration")
 config = Config('./config/config.json', {
     "ownUsers": [
         "cocodef9"
     ],
     "token": "206baa63-dcd2-47f3-b197-b43de4e3301f",
     "logFolder": "C:\\Users\\sjoer\\Appdata\\Roaming\\Minecraft 1.8.9\\logs\\latest.log",
-    "autoWho": False,
-    "autoInvite": False,
+    "autoWho": True,
+    "autoInvite": True,
     "autoLeave": True,
     "autoPWarp": True,
     "autoLeavePartyDC": True,
     "enableStatistics-Do-Not-Disable!": True
 })
+print("Loading controller")
 controller = Config('./config/controller.json', {
     "stop": False,
     "getAPI": False
 })
 
 # Create a configuration file logger
+print("Loading log monitor")
 logger = LogMonitor(config.get("logFolder"), config.get("ownUsers"), True)
 
 # Create an API object
+print("Loading API")
 api = API(config.get("token"), True)
-# Print API uptime info
-print(api.getApiStatus())
 
 # TODO: Add to GUI
 autoInviteToggle = True
-
+    
 # Main loop
 def startMCO():
     cycle = 0
+    print("Starting main loop")
     while True:
 
         # Update cycle number (1 per second)
@@ -47,6 +53,9 @@ def startMCO():
 
         # Update logger
         logger.tick()
+
+        # See if there are config changes
+        config.hotload()
 
         # Check for token update
         if logger.newToken != None:
@@ -116,4 +125,16 @@ def startMCO():
     exit()
 
 if __name__ == '__main__':
+    print("Starting MCO")
+    # Print API uptime info
+    print("Retrieving API server status...")
+    print(api.getApiStatus())
+    
+    # Tick the logger once to pass any entries existing before starting the overlay
+    logger.tick()
+    logger.tick()
+    
+    # Reset logger values
+    print("Resetting log file entries")
+    logger.resetExposed()
     startMCO()
