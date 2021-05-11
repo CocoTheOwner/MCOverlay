@@ -6,6 +6,17 @@
 - [ ] Statistics to SQL
 - [ ] API Load
 	- [ ] API overload handling
+- [ ] Statistics check bypass whitelist
+- [ ] AutoObby
+- [ ] AutoTrash
+	- Trash
+	- Bad
+	- Suck
+	- Gay
+	- :oof:
+- [ ] SplitWarner
+- [ ] Add origin to commandSender
+- [ ] Removed from party
 ## Frontend
 - [ ] GUI Layout
 - [ ] Selectable statistics in table
