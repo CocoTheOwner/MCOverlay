@@ -73,3 +73,10 @@ class GameStatus:
     unknown = "Unknown"
     afk = "AFK"
     maxStatusLength = len(gameLobby)
+
+class Origin:
+    mainLobby = "MainLobby"
+    gameLobby = "GameLobby"
+    mainChat = "MainChat"
+    gameChat = "GameChat"
+    party = "Party"

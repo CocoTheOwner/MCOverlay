@@ -1,5 +1,5 @@
 import os
-from ChatEvents import ChatEvents as CE, GameStatus as GS
+from Enums import ChatEvents as CE, GameStatus as GS, Origin as OG
 from PlayerQueue import PlayerQueue
 class LogMonitor:
 
@@ -206,7 +206,7 @@ class LogMonitor:
             return
             
         # Add the player to the playerqueue
-        self.queue.add(user, rank, stars)
+        self.queue.add(user, rank, stars, OG.mainChat)
 
         rank = "[" + rank + "] " if rank != "NON" else ""
 
@@ -314,7 +314,7 @@ class LogMonitor:
         rank = "[" + rank + "] " if rank != "NON" else ""
         name = line[1]
 
-        self.queue.add(name, rank, -1)
+        self.queue.add(name, rank, origin=OG.mainLobby)
 
 
         self.file(CE.player, "{}{}".format(rank, name))
@@ -443,7 +443,7 @@ class LogMonitor:
                 name = playerWithRank[1]
             if not name in self.party:
                 self.party.append(name)
-            self.queue.add(name, rank)
+            self.queue.add(name, rank, origin=OG.party)
 
         self.file(CE.party, "Members: {}".format(", ".join(self.party)))
 
@@ -498,7 +498,7 @@ class LogMonitor:
 
         self.party.append(name)
 
-        self.queue.add(name, rank)
+        self.queue.add(name, rank, origin=OG.party)
 
         if len(self.party) == 0:
             self.isPartyLeader = False
@@ -666,7 +666,7 @@ class LogMonitor:
                 self.autoWho = True
 
         # Store player by username
-        self.queue.add(name, "UNK", -1)
+        self.queue.add(name, origin=OG.gameLobby)
 
         # Save the amount of players in the lobby
         self.playersInLobby = joinNumber
@@ -708,7 +708,7 @@ class LogMonitor:
         self.resetStats = True
         for username in line:
             self.file(CE.who, username)
-            self.queue.add(username, "UNK", -1)
+            self.queue.add(username, origin=OG.gameLobby)
         self.file(CE.who, "({}/{}) players in the lobby".format(len(line), self.lobbyCap))
 
     def afk(self):

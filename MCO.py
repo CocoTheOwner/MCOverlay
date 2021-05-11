@@ -1,4 +1,4 @@
-from PlayerQueue import PlayerQueue
+from Enums import Origin as OG
 from API import API
 from LogMonitor import LogMonitor
 from CommandSender import CommandSender as CS
@@ -16,9 +16,10 @@ config = Config('./config/config.json', {
     "token": "206baa63-dcd2-47f3-b197-b43de4e3301f",
     "logFolder": "C:\\Users\\sjoer\\Appdata\\Roaming\\Minecraft 1.8.9\\logs\\latest.log",
     "playerDetection": {
-        "mainLobbyChat": True,
-        "mainLobbyJoin": True,
-        "gameLobby": True
+        OG.mainChat: True,
+        OG.mainLobby: True,
+        OG.gameChat: True,
+        OG.gameLobby: True
     },
     "autoCommands": {
         "autoWho": True,
@@ -134,7 +135,18 @@ def startMCO():
 
         # Update player definitions
         if config.get("enableStatistics-Do-Not-Disable!"):
-            api.fetch(logger.queue.get())
+            pd = config.get("playerDetection")
+            q = {}
+            queue = logger.queue.get()
+            for player in queue.keys():
+                origin = queue[player]["origin"]
+                if ((origin == OG.mainChat and pd[OG.mainChat]) or
+                    (origin == OG.mainLobby and pd[OG.mainLobby]) or
+                    (origin == OG.gameChat and pd[OG.gameChat]) or
+                    (origin == OG.gameLobby and pd[OG.gameLobby]) or
+                    (origin == OG.party)):
+                    q[player] = queue[player]
+            api.fetch(q)
 
         # Check controller
         controller.load()

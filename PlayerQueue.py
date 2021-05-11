@@ -31,7 +31,7 @@ class PlayerQueue:
                 del self.queue[i]
         self.updateEmpty()
 
-    def add(self, name: str, rank = "UNK", stars = -1):
+    def add(self, name: str, rank = "UNK", stars = -1, origin = "UNK"):
         """Adds a player to the playerqueue by name, rank and stars
 
         Args:
@@ -40,14 +40,16 @@ class PlayerQueue:
             stars (int): The amount of stars for the player
         """
         if not name in self.queue:
-            self.queue[name] = {"rank": rank, "stars": stars}
+            self.queue[name] = {"rank": rank, "stars": stars, "origin": stars}
         else:
             info = self.queue[name]
             savedRank = info.get("rank")
             savedStars = info.get("stars")
+            savedOrigin = info.get("origin")
             info = {
                 "rank": (rank if rank != "UNK" else savedRank),
-                "stars": (stars if stars != -1 else savedStars)
+                "stars": (stars if stars != -1 else savedStars),
+                "origin": (origin if origin != "UNK" else savedOrigin)
             }
         self.updateEmpty()
 
