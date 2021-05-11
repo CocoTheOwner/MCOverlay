@@ -1,23 +1,33 @@
 class ChatEvents:
+
+    # Non-useful
     uncharted = "Unch"
     removed = "Remv"
+    useless = "Usles"
+
+    # Useful & system
     quit = "Quit"
     join = "Join"
-    chat = "Chat"
     lobby = "Lobby"
     who = "/who"
     player = "Enter"
     game = "Game"
     time = "Time"
     api = "API"
+    party = "Party"
+    afk = "AFK"
+
+    # Useful
+    chat = "Chat"
     void = "Void"
     bed = "Bed"
     eliminated = "Elim"
-    party = "Party"
     died = "Death"
-    afk = "AFK"
-    all = None
+
+    # Macros
+    all = "All"
     none = []
+
     useful = [
         quit,
         join,
