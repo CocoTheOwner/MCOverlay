@@ -115,6 +115,35 @@ class PlayerTags:
     nick = ["N", "Nick"]
     alt = ["A", "Alt"]
 
+class GameOptions:
+    games = [
+        "Arcade",
+        "Arena",
+        "Battleground",
+        "HungerGames",
+        "MCGO",
+        "Paintball",
+        "Quake",
+        "TNTGames",
+        "UHC",
+        "VampireZ",
+        "Walls",
+        "Walls3",
+        "GingerBread",
+        "SkyWars",
+        "TrueCombat",
+        "SkyClash",
+        "BuildBattle",
+        "MurderMystery",
+        "Bedwars",
+        "Legacy",
+        "Duels",
+        "Pit",
+        "SkyBlock",
+        "SuperSmash",
+        "SpeedUHC"
+    ]
+
 class Statistics:
     HypixelLevel = 0
     Tags = {}
@@ -123,10 +152,17 @@ class Statistics:
     BedwarsStats = {
         "Kills": False,
         "Deaths": False,
-        "Beds": False,
+        "BedB": False,
+        "BedL": False,
         "Finals": False,
         "Wins": False,
         "Losses": False,
+        "Streak": False,
+        "Iron": False,
+        "Gold": False,
+        "Diamonds": False,
+        "Emerals": False,
+        "Resources": False,
         "FKDR": False,
         "Kill/Death": False,
         "BedB/BedL": False,
@@ -157,9 +193,9 @@ class Statistics:
                 "Overall": BedwarsStats
             },
             "Ultimate": {
-                "Duo": BedwarsStats,
-                "4s": BedwarsStats,
-                "Overall": BedwarsStats
+                "Duo": BedwarsStats + {"Kit": False},
+                "4s": BedwarsStats + {"Kit": False},
+                "Overall": BedwarsStats + {"Kit": False}
             },
             "Lucky": {
                 "Duo": BedwarsStats,
