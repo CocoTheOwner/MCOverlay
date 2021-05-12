@@ -59,7 +59,10 @@ class API:
                 threads.append(executor.submit(self.getPlayerData, player))
 
             for task in as_completed(threads):
-                if self.debug and (total-count)%10==0: self.file("REQ", "Completed task ({}/{}) | Result: {}".format(total - count, total, str(len(task.result()))), False)
+                res = task.result()
+                if res == None:
+                    self.file("REQ", "Failed task ({}/{}). Resulted in None".format(total - count, total))
+                elif self.debug and (total-count)%10==0: self.file("REQ", "Completed task ({}/{}) | Result: {}".format(total - count, total, str(len(res))), False)
                 count -= 1
                 
             executor.shutdown(True)
