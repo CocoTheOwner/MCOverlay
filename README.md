@@ -4,7 +4,6 @@
 # Task Checklist
 ## Backend
 - [ ] Statistics to SQL
-- [ ] Statistics check bypass whitelist
 - [ ] AutoObby
 - [ ] AutoTrash
 	- Trash
@@ -13,8 +12,9 @@
 	- Gay
 	- :oof:
 - [ ] SplitWarner
-- [ ] Add origin to commandSender
-- [ ] Removed from party
+	- [ ] Requires death event.
+	- [ ] Requires list of teammates (can be done from party only, I think)
+			- [ ] Potentially add a chat-based command that lets you enter another
 ## Frontend
 - [ ] GUI Layout
 - [ ] Selectable statistics in table
@@ -92,3 +92,9 @@
 	- [X] Name mention
 - [X] Monitor API Load
 	- [X] API overload handling
+- [X] Statistics check bypass whitelist
+- [X] Add origin to commandSender
+- [X] Removed from party ([RANK] username has been kicked from the party.)
+- [X] Kicked from party (You have been kicked from the party by [RANK] username)
+- [X] Empty party (The party was disbanded because all invites expired and the party was empty)
+- [X] Disbanded the party ([RANK] username has disbanded the party!)

@@ -142,6 +142,12 @@ class LogMonitor:
             self.partyJoin(line)
         elif line.endswith(" left the party."):
             self.partyLeave(line)
+        elif line.endswith(" has been kicked from the party"):
+            self.partyKick(line)
+        elif line.startswith("You have been kicked from the party by "):
+            self.partyGotKicked(line)
+        elif line == "The party was disbanded because all invites expired and the party was empty" or line.endswith(" has disbanded the party!"):
+            self.partyDisbanded(line)
         elif line.count(" has promoted" ) > 0 and line.endswith("to Party Leader"):
             self.partyPromote(line)
         elif line.startswith("The party was transferred to "):
@@ -388,7 +394,6 @@ class LogMonitor:
         team = line.removeprefix("TEAM ELIMINATED > ").removesuffix("has been eliminated!").strip()
         self.file(CE.eliminated, team + " eliminated!")
         
-
     def partyMemberLeft(self, line:str):
         """Process a party member leave event
 
@@ -419,7 +424,6 @@ class LogMonitor:
         self.status = GS.inGame
         self.file(CE.died, "You died")
         
-
     def partyInvite(self, line:str):
         """Process a party invite
 
@@ -476,7 +480,6 @@ class LogMonitor:
         self.file(CE.party, "Party List:")
         self.file(CE.party, "Leader: {}{}".format(rank, name))
         
-
     def partyMembers(self, line: str):
         """Process a party list member line
 
@@ -592,6 +595,86 @@ class LogMonitor:
 
         self.file(CE.party, "{}{} left the party".format(rank, name))
         self.file(CE.party, ("Party members are now: {}".format(", ".join(self.party))) if len(self.party) > 0 else "The party is empty!")
+
+    def partyKick(self, line: str):
+        """ Processes a party kick event
+
+        Args:
+            line (str): The line to process
+
+        Example
+            [RANK] username
+            username has been kicked from the party
+        """
+        x = line.removesuffix(" has been kicked from the party").split(" ")
+        rank = LogMonitor.getRank(x[0])
+        if rank == "NON":
+            name = x[0]
+            rank = ""
+        else:
+            name = x[1]
+            rank = "[" + rank + "] "
+        if name not in self.party:
+            self.file(CE.party, "{}{} has been kicked from the party but was not in it!".format(rank, name))
+        else:
+            self.party.remove(name)
+            self.file(CE.party, "{}{} has been kicked from the party".format(rank, name))
+
+    def partyGotKicked(self, line: str):
+        """ Processes a party got kicked event
+
+        Args:
+            line (str): The line to process
+
+        Example
+            You have been kicked from the party by [RANK] username
+            You have been kicked from the party by username
+        """
+        self.isPartyLeader = None
+        self.party = []
+        self.autoPartyList = False
+        self.autoLeavePartyLeave = False
+        self.partyMemberMissing = False
+        self.partyMemberMissingTwo = False
+        x = line.removeprefix("You have been kicked from the party ").split(" ")
+        rank = LogMonitor.getRank(x[0])
+        if rank == "NON":
+            name = x[0]
+            rank = ""
+        else:
+            name = x[1]
+            rank = "[" + rank + "] "
+        self.file(CE.party, "{}{} kicked you from the party".format(rank, name))
+
+    def partyDisbanded(self, line: str):
+        """Process a party disband
+
+        Args
+            line (str): Line to process
+        
+        Example:
+            The party was disbanded because all invites expired and the party was empty
+            [RANK] username has disbanded the party!
+            username has disbanded the party!
+        """
+        self.isPartyLeader = None
+        self.party = []
+        self.autoPartyList = False
+        self.autoLeavePartyLeave = False
+        self.partyMemberMissing = False
+        self.partyMemberMissingTwo = False
+        if line.endswith("has disbanded the party!"):
+            x = line.removesuffix("has disbanded the party!").strip().split(" ")
+            rank = LogMonitor.getRank(x[0])
+            if rank == "NON":
+                name = x[0]
+                rank = ""
+            else:
+                name = x[1]
+                rank = "[" + rank + "] "
+            self.file(CE.party, "{}{} has disbanded the party".format(rank, name))
+        else:
+            self.file(CE.party, "The party was disbanded")
 
     def partyPromote(self, line: str):
         """Process a party promote
