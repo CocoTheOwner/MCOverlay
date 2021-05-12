@@ -190,7 +190,7 @@ class MCO:
         # Check for logger party member missing tier 2
         if self.logger.partyMemberMissingTwo:
             self.logger.partyMemberMissingTwo = False
-            if self.config.get("autoCommands")["leavePartyMemberMissing"]: self.file(CO.partymissing, self.commandSender.pleave(CO.partymissing))
+            if self.config.get("autoCommands")["autoLeavePartyMemberMissing"]: self.file(CO.partymissing, self.commandSender.pleave(CO.partymissing))
 
         # Check for autoleave
         if self.logger.autoLeave and self.config.get("autoCommands")["autoLeave"]:
