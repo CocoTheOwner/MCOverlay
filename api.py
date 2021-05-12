@@ -3,6 +3,7 @@ from Config import Config
 from json.decoder import JSONDecodeError
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from fake_useragent import UserAgent
+import traceback
 
 ua = UserAgent()
 """Module for retrieving data from several preset API pages"""
@@ -48,7 +49,7 @@ class API:
             return
         if failed > 0:
             self.file("MC", "API has been down for {} seconds, but has resumed work.".format(str(failed * 2)))
-        self.file("REQ", "Fetching statistics for: " + ", ".join(playerQueue))
+        self.file("REQ", "Fetching statistics for: " + ", ".join(playerQueue), False)
         threads = []
         with ThreadPoolExecutor(max_workers=10) as executor:
             count = 0
@@ -58,7 +59,7 @@ class API:
                 threads.append(executor.submit(self.getPlayerData, player))
 
             for task in as_completed(threads):
-                if self.debug and (total-count)%10==0: self.file("REQ", "Completed task ({}/{}) | Result: {}".format(total - count, total, str(len(task.result()))))
+                if self.debug and (total-count)%10==0: self.file("REQ", "Completed task ({}/{}) | Result: {}".format(total - count, total, str(len(task.result()))), False)
                 count -= 1
                 
             executor.shutdown(True)
@@ -102,6 +103,7 @@ class API:
             self.file("REQ", "Likely one of the responses failed. UUID: {}, Stats: {}".format(uuid, "None" if stats==None else stats[:100]))
         except Exception as e:
             self.file("REQ", "An unhandled exception was raised for player: {}\nError: {}".format(player, str(type(e))))
+            self.file("REQ", "Trackeback: {}".format(traceback.format_exc()))
             raise e
 
     def printHypixelStats(self):
@@ -147,12 +149,13 @@ class API:
         """
         if self.updateHYAPIRequests():
             self.HYAPIRequests.append(time.time())
-            if self.debug: self.file("REQ", "Downloading stats of {} ({})".format(player, uuid))
+            if self.debug: self.file("REQ", "Downloading stats of {} ({})".format(player, uuid), False)
             request = self.getRequest("https://api.hypixel.net/player?key={}&uuid={}".format(self.token, uuid))
             if request != None and "player" in request:
-                if self.debug: self.file("REQ", player + "'s stats download successful")
+                if self.debug: self.file("REQ", player + "'s stats download successful", False)
                 self.stats[uuid] = request["player"]
                 if self.debug: self.verifyPlayername(player, uuid, request["player"]["playername"], request["player"]["uuid"])
+                self.file("HY", "Successfully retrieved statistics.", False)
                 return request["player"]
             elif self.debug and request != None:
                 self.file("HY", "Error when getting Stats for {}: {}".format(player, request["cause"] if request != None and "cause" in request else ("Request is 'None'" if request == "None" else request)))
@@ -213,14 +216,14 @@ class API:
         now = time.time()
         for timeStamp in self.HYAPIRequests:
             if now - timeStamp > 60:
-                self.HYAPIRequests.remove(time)
+                self.HYAPIRequests.remove(timeStamp)
         return self.HYAPIRequestsMax > len(self.HYAPIRequests)
 
     def updateMCAPIRequests(self):
         now = time.time()
         for timeStamp in self.MCAPIRequests:
             if now - timeStamp > 600:
-                self.MCAPIRequests.remove(time)
+                self.MCAPIRequests.remove(timeStamp)
         return self.MCAPIRequestsMax > len(self.MCAPIRequests)
 
     def verifyPlayername(self, name1, uuid1, name2, uuid2):
@@ -275,4 +278,4 @@ class API:
             type = "REQST"
         else:
             type = "OTHER"
-        print("[ API+ ] {}     | {}: {}".format("ERROR " if isError else "NOTICE", "HYAPI" if type == "HY" else "MCAPI", line))
+        print("[ API+ ] {}     | {}: {}".format("ERROR " if isError else "NOTICE", type, line))

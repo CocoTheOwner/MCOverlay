@@ -96,11 +96,9 @@ class MCO:
     def start(self):
 
         if self.config.get("runWhoPListOnStartup"):
-            time.sleep(1)
             self.commandSender.plist(CO.startup)
             time.sleep(0.25)
             self.commandSender.who(CO.startup)
-            time.sleep(10)
 
         try:
 
