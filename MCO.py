@@ -5,6 +5,7 @@ from LogMonitor import LogMonitor
 from CommandSender import CommandSender
 from Config import Config
 import time
+import traceback
 
 defaultConfig = {
     "ownUsername": "cocodef9",
@@ -32,6 +33,7 @@ defaultConfig = {
         "ReadyPlayerFour",
         "dungeoneer2"
     ],
+    "runWhoPListOnStartup": True,
     "leavePartyMemberMissing": True,
     "enableStatistics-Do-Not-Disable!": True
 }
@@ -80,8 +82,8 @@ class MCO:
         # API
         self.file(SE.notify, "Loading API")
         self.api = API(self.config.get("token"), True)
-        self.file(SE.api, self.api.hypixelStats())
-        self.file(SE.api, self.api.minecraftStats())
+        self.api.printHypixelStats()
+        self.api.printMinecraftStats()
 
         # CommandSender
         self.file(SE.notify, "Loading Command Sender")
@@ -93,16 +95,17 @@ class MCO:
 
     def start(self):
 
-        try:
-
-            # Update status
-            self.status = SS.running
-
-            # Run PList and who commands
+        if self.config.get("runWhoPListOnStartup"):
             time.sleep(1)
             self.commandSender.plist(CO.startup)
             time.sleep(0.25)
             self.commandSender.who(CO.startup)
+            time.sleep(10)
+
+        try:
+
+            # Update status
+            self.status = SS.running
             
             cycle = 0
 
@@ -114,8 +117,8 @@ class MCO:
                 cycle += 0.1
 
                 if cycle % 60 == 0:
-                    self.file(SE.api, self.api.hypixelStats())
-                    self.file(SE.api, self.api.minecraftStats())
+                    self.api.printHypixelStats()
+                    self.api.printMinecraftStats()
 
                 # Update logger
                 self.logger.tick()
@@ -138,10 +141,12 @@ class MCO:
                 # Use at your own risk
                 time.sleep(0.1)
 
+
         except Exception as e:
             self.commandSender.available = False
             self.file(SE.error, "An uncaught exception has been raised in the main loop: {}".format(e))
             self.file(SE.error, "Disabling all command outputs of the program to prevent potential damage")
+            self.file(SE.error, traceback.format_exc())
 
 
         # Shutdown
@@ -196,7 +201,7 @@ class MCO:
         if len(self.logger.failedWho) > 0:
             for name in self.logger.failedWho:
                 # TODO: Add to statistics flags
-                print("Failed /who by: " + name)
+                self.file(SE.notify, "Failed /who by: " + name)
             self.logger.failedWho = []
             
         # Check for stats reset (/who)
@@ -227,15 +232,17 @@ class MCO:
         if self.controller.get("getAPI"):
             self.controller.set("getAPI", False)
             self.controller.save()
-            self.file(SE.api, self.api.hypixelStats())
-            self.file(SE.api, self.api.minecraftStats())
+            self.api.printHypixelStats()
+            self.api.printMinecraftStats()
             return False
 
     def statisticsTask(self):
+        queue = self.logger.queue.get()
+        if len(queue) == 0:
+            return
         if self.config.get("enableStatistics-Do-Not-Disable!"):
             pd = self.config.get("downloadStatsOfPlayersIn")
             q = {}
-            queue = self.logger.queue.get()
             for player in queue.keys():
                 origin = queue[player]["origin"]
                 if ((origin == GO.mainChat and pd[GO.mainChat]) or

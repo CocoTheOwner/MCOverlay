@@ -4,11 +4,11 @@ import time
 from os import path
 class Config:
     configFile = "./config/config.txt"
-    defaultConfig = {}
+    defaultConfig = None
     config = {}
     modificationTime = None
 
-    def __init__(self, path, config):
+    def __init__(self, path: str, config: dict):
         self.defaultConfig = config
         self.configFile = path
         self.ensureFileExistNotEmpty()
@@ -58,21 +58,15 @@ class Config:
             os.makedirs(self.configFile.removesuffix(self.configFile.split("/")[-1]))
         if not os.path.isfile(self.configFile):
             print("Making new config file at: " + self.configFile)
-            with open(self.configFile, "w") as f:
-                json.dump(self.defaultConfig, f, ensure_ascii=False, indent=4)
         elif os.path.getsize(self.configFile) == 0:
             print("Filling existing but empty config file at: " + self.configFile)
-            with open(self.configFile, "w") as f:
-                json.dump(self.defaultConfig, f, ensure_ascii=False, indent=4)
-    
+        open(self.configFile, "w").write(json.dumps(self.defaultConfig, ensure_ascii=True, indent=4))
     def ensureFileValid(self):
         for key in self.defaultConfig:
-            if not key in self.config:
-                print("Key not found: " + key + " in keys: " + str(self.config))
+            while not key in self.config:
+                print("Key not found: " + key + " in keys: " + ", ".join(self.config.keys()))
                 print("Invalid configuration file, does not contain all required keys! Resetting")
-                with open(self.configFile.replace(".txt", "-invalid.txt"), "w") as f:
-                    json.dump(self.config, f, ensure_ascii=False, indent=4)
+                open(self.configFile, "w").close()
+                self.ensureFileExistNotEmpty()
+                
                 time.sleep(0.1)
-                with open(self.configFile, "w") as f:
-                    json.dump(self.defaultConfig, f, ensure_ascii=False, indent=4)
-                break
