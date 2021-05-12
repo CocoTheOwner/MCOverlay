@@ -4,7 +4,9 @@ import time
 class CommandSender:
 
     available = True
-    controller = Controller()
+    controller = None
+    def __init__(self):
+        self.controller = Controller()
 
     def plist(self, origin: str):
         """Sends a p list command
