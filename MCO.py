@@ -25,7 +25,12 @@ defaultConfig = {
         "autoLeavePartyDC": True
     },
     "autoInviteStatBypass": [
-
+        "dungeoneer1",
+        "Prems",
+        "gussie842",
+        "cocodef9",
+        "ReadyPlayerFour",
+        "dungeoneer2"
     ],
     "leavePartyMemberMissing": True,
     "enableStatistics-Do-Not-Disable!": True
