@@ -1,4 +1,5 @@
 import os
+from time import thread_time
 from Enums import ChatEvents as CE, GameStatus as GS, GameOrigin as GO, SystemStatus as SS
 from PlayerQueue import PlayerQueue
 class LogMonitor:
@@ -135,6 +136,10 @@ class LogMonitor:
             self.lobbyChatMessage(line)
         elif line.startswith("ONLINE:"):
             self.whoCommand(line)
+        elif line.startswith("Party Leader: "):
+            self.partyLeader(line)
+        elif line.startswith("Members: ") or line.startswith("Party Members: ") or line.startswith("Party Moderators: "):
+            self.partyMembers(line)
         elif (line.split(" ")[0].endswith(":") or line.split(" ")[1].endswith(":")) and line.count(" ") > 1 and (self.status == GS.inGame or self.status == GS.gameLobby):
             self.gameChatMessage(line)
         elif line.startswith("You are currently connected to server ") or line.startswith("Sending you to") or line.startswith("Taking you to"):
@@ -151,10 +156,6 @@ class LogMonitor:
             self.selfDied()
         elif line.endswith(" to the party! They have 60 seconds to accept."):
             self.partyInvite(line)
-        elif line.startswith("Party Leader: "):
-            self.partyLeader(line)
-        elif line.startswith("Party Members: "):
-            self.partyMembers(line)
         elif line.endswith(" joined the party."):
             self.partyJoin(line)
         elif line.endswith(" left the party."):
@@ -515,7 +516,7 @@ class LogMonitor:
         Example:
             Party Members: [RANK] username ? username ? [RANK] username
         """
-        x = line.removeprefix("Party Members: ").split(" ? ")
+        x = line.removeprefix("Party ").removeprefix("Members: ").removeprefix("Moderators: ").split(" ? ")
         for playerWithRank in x:
             playerWithRank = playerWithRank.split(" ")
             rank = LogMonitor.getRank(playerWithRank[0])
@@ -828,6 +829,11 @@ class LogMonitor:
         self.queue.add(name, origin=GO.gameLobby)
         self.game.append(name)
 
+        if not len(self.game) == int(x[0]):
+            self.autoWho = True
+            while len(self.game) > int(x[0]):
+                self.game.pop(0)
+
         if name == self.ownUsername and int(x[0]) > 1:
             self.autoWho = True
 
@@ -977,7 +983,6 @@ class LogMonitor:
         Status:
             inGame
         """
-        self.status = GS.inGame
         line = line.split(" ")
         if len(line) < 3: self.unprocessed(" ".join(line))
         rank = LogMonitor.getRank(line[0])
@@ -1081,6 +1086,7 @@ class LogMonitor:
         line == "to access powerful upgrades." or
         line == "This game has been recorded. Click here to watch the Replay!" or
         line == "You cannot invite that player since they're not online." or
+        line == "send:lobby" or
 
         line.replace("?","") == "" or
         line.replace("-","") == "" or
@@ -1101,7 +1107,8 @@ class LogMonitor:
         line.count("You tipped") > 0 and line.count("players!") > 0 or
         line.count("found a") > 0 and line.count("Mystery Box!") > 0 or
         line.count("Watchdog has banned") > 0 and line.count("players in the last") > 0 or
-        line.count("Staff have banned an additional") > 0 and line.count("in the last") > 0
+        line.count("Staff have banned an additional") > 0 and line.count("in the last") > 0 or
+       (line.count(":") > 0 and (line.split(" ")) == 0)
         )
 
     def file(self, type: str, message: str, printLine = True):
