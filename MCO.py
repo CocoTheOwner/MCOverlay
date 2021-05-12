@@ -26,7 +26,8 @@ defaultConfig = {
         "autoPList": True,
         "autoTrash": True,
         "autoTrashOof": True,
-        "autoLeavePartyDC": True
+        "autoLeavePartyDC": True,
+        "autoLeavePartyMemberMissing": True
     },
     "autoInviteStatBypass": [
         "dungeoneer1",
@@ -37,11 +38,10 @@ defaultConfig = {
         "dungeoneer2"
     ],
     "runWhoPListOnStartup": True,
-    "leavePartyMemberMissing": True,
     "enableStatistics-Do-Not-Disable!": True,
     "debug": {
-        "API": True,
-        "Logs": True
+        "API": False,
+        "Logs": False
     },
     "refreshesPerSecond": 10
 }
@@ -76,7 +76,7 @@ class MCO:
         self.controller = Config('./config/controller.json', defaultController)
 
         # Set refresh rate
-        self.sleepPerCycle = round(1000/self.config.get("refreshesPerSecond"))
+        self.sleepPerCycle = round(1/self.config.get("refreshesPerSecond"))
 
         # LogMonitor
         self.file(SE.notify, "Loading log monitor")
@@ -127,7 +127,6 @@ class MCO:
             # Main loop
             self.file(SE.notify, "Starting main loop")
             while True:
-
                 # Update cycle number (1 per second)
                 cycle += 0.1
 
@@ -161,7 +160,8 @@ class MCO:
             self.commandSender.available = False
             self.file(SE.error, "An uncaught exception has been raised in the main loop: {}".format(e))
             self.file(SE.error, "Disabling all command outputs of the program to prevent potential damage")
-            self.file(SE.error, traceback.format_exception())
+            self.file(SE.error, traceback.format_exc())
+            raise e
 
 
         # Shutdown
@@ -190,19 +190,17 @@ class MCO:
         # Check for logger party member missing tier 2
         if self.logger.partyMemberMissingTwo:
             self.logger.partyMemberMissingTwo = False
-            if self.config.get("leavePartyMemberMissing"): self.file(CO.partymissing, self.commandSender.pleave(CO.partymissing))
+            if self.config.get("autoCommands")["leavePartyMemberMissing"]: self.file(CO.partymissing, self.commandSender.pleave(CO.partymissing))
 
         # Check for autoleave
-        if self.logger.autoLeave:
-            if self.autoLeaveCount * self.sleepPerCycle >= self.config.get("autoLeaveDelaySeconds"):
+        if self.logger.autoLeave and self.config.get("autoCommands")["autoLeave"]:
+            self.file(SE.notify, "Attempting autoleave: {}s / {}s".format(self.autoLeaveCount * self.sleepPerCycle, self.config.get("autoCommands")["autoLeaveDelaySeconds"]))
+            if self.autoLeaveCount * self.sleepPerCycle >= self.config.get("autoCommands")["autoLeaveDelaySeconds"]:
                 self.autoLeaveCount = 0
                 self.logger.autoLeave = False
-                if self.config.get("autoCommands")["autoLeave"]:
-                    self.commandSender.leave(CO.autoleave)
-                    if self.logger.party != None and len(self.logger.party) > 1 and self.config.get("autoCommands")["autoPWarp"]:
-                        time.sleep(1.0)
-                        self.commandSender.pwarp(CO.autoleave)
-                elif self.config.get("autoCommands")["autoPWarp"]:
+                self.commandSender.leave(CO.autoleave)
+                if self.logger.party != None and len(self.logger.party) > 1 and self.config.get("autoCommands")["autoPWarp"]:
+                    time.sleep(1.0)
                     self.commandSender.pwarp(CO.autoleave)
             else:
                 self.autoLeaveCount += 1
