@@ -73,6 +73,7 @@ class GameStatus:
     inGame = "In Game"
     gameLobby = "Game Lobby"
     mainLobby = "Main Lobby"
+    afterGame = "After Game"
     unknown = "Unknown"
     afk = "AFK"
     maxStatusLength = len(gameLobby)
