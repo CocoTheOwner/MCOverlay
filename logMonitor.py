@@ -73,7 +73,7 @@ class LogMonitor:
         # If the length of the log file is shorter than the linenumber, reset the linenumber
         if len(content) < self.lineNumber:
             self.lineNumber = 0
-            if self.debug: print("Reset linenumber. Likely due to Minecraft restarting.")
+            if self.debug: self.file(CE.system, "Reset linenumber. Likely due to Minecraft restarting.")
         # Selects log lines that need to be seen
         if self.lineNumber != 0: content = content[self.lineNumber + 1:len(content)]
 
@@ -588,7 +588,7 @@ class LogMonitor:
             rank = "[" + x + "] "
 
         if not name in self.party:
-            print("Someone left the party that was not in it?! BUG!")
+            self.file(CE.bug, "Someone left the party that was not in it?! BUG!")
             self.autoPartyList = True
         else:
             self.party.remove(name)
@@ -1040,6 +1040,7 @@ class LogMonitor:
         len(line.replace("-","").strip().replace("(","").replace(")","")) == 1 or
 
         line.startswith("You will respawn in") or
+        line.startswith("Automatically activated:") or 
        (line.startswith("+") and line.count("Bed Wars Experience (") > 0) or
        (line.startswith("+") and line.count("coins! (") > 0) or
        (line.startswith("+") and line.endswith("Iron")) or
@@ -1082,6 +1083,8 @@ class LogMonitor:
             )
         message = message if len(message) < 150 else message[:150].strip() + " (...)"
         
-        if printLine and (CE.printAll or type in CE.printTypes): print(message)
-        if CE.logAll or type in CE.logTypes: open(self.combinedLog, "a").write(message + "\n")
+        if printLine and (CE.printAll or type in CE.printTypes): 
+            print(message)
+        if CE.logAll or type in CE.logTypes: 
+            open(self.combinedLog, "a").write(message + "\n")
         
