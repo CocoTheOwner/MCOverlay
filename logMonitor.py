@@ -834,9 +834,8 @@ class LogMonitor:
         # Save the amount of players in the lobby
         self.lobbyCap = lobbyCap
 
-        print(", ".join(self.game))
         self.file(CE.join, "{} ({}/{})".format(name, len(self.game), lobbyCap))
-        if self.debug: self.file(CE.join, "Currently in lobby ({}): {}".format(len(self.game), self.game))
+        if self.debug: self.file(CE.join, "Currently in lobby ({}/{}): {}".format(len(self.game), self.lobbyCap, ", ".join(self.game)))
 
     def playerRejoinGame(self, line: str):
         """Process a player game lobby rejoin event
