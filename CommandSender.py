@@ -84,7 +84,7 @@ class CommandSender:
             self.controller.release(Key.shift)
             self.controller.press("t")
             self.controller.release("t")
-            time.sleep(0.1)
+            time.sleep(0.05)
             self.controller.press(Key.ctrl)
             self.controller.press("v")
             time.sleep(0.05)
