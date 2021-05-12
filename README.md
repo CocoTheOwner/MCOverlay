@@ -15,6 +15,7 @@
 	- [ ] Requires death event.
 	- [ ] Requires list of teammates (can be done from party only, I think)
 			- [ ] Potentially add a chat-based command that lets you enter another
+- [ ] Only load config when it's last edited date is changed
 ## Frontend
 - [ ] GUI Layout
 - [ ] Selectable statistics in table
