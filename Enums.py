@@ -16,6 +16,7 @@ class ChatEvents:
     api = "API"
     party = "Party"
     afk = "AFK"
+    bug = "BUG"
 
     # Useful
     chat = "Chat"
@@ -43,7 +44,8 @@ class ChatEvents:
         eliminated,
         party,
         died,
-        afk
+        afk,
+        bug
     ]
     system = [
         quit,
@@ -55,12 +57,13 @@ class ChatEvents:
         time,
         api,
         party,
-        afk
+        afk,
+        bug
     ]
 
     maxEventLength = len(lobby)
 
-    printTypes = chat
+    printTypes = useful
     logTypes = all
 
     printAll = printTypes == all
