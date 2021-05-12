@@ -21,8 +21,11 @@ defaultConfig = {
         "autoWho": True,
         "autoInvite": True,
         "autoLeave": True,
+        "autoLeaveDelaySeconds": 10,
         "autoPWarp": True,
         "autoPList": True,
+        "autoTrash": True,
+        "autoTrashOof": True,
         "autoLeavePartyDC": True
     },
     "autoInviteStatBypass": [
@@ -35,7 +38,12 @@ defaultConfig = {
     ],
     "runWhoPListOnStartup": True,
     "leavePartyMemberMissing": True,
-    "enableStatistics-Do-Not-Disable!": True
+    "enableStatistics-Do-Not-Disable!": True,
+    "debug": {
+        "API": True,
+        "Logs": True
+    },
+    "refreshesPerSecond": 10
 }
 defaultController = {
     "stop": False,
@@ -45,11 +53,14 @@ defaultController = {
 class MCO:
 
     status = SS.none
+    sleepPerCycle = None
+    autoLeaveCount = 0
     config = None
     controller = None
     logger = None
     autoInviteToggle = True
     commandSender = None
+    api = None
 
     def __init__(self):
         
@@ -64,12 +75,15 @@ class MCO:
         self.file(SE.notify, "Loading controller")
         self.controller = Config('./config/controller.json', defaultController)
 
+        # Set refresh rate
+        self.sleepPerCycle = round(1000/self.config.get("refreshesPerSecond"))
+
         # LogMonitor
         self.file(SE.notify, "Loading log monitor")
         self.logger = LogMonitor(
             self.config.get("logFolder"), 
             self.config.get("ownUsername"), 
-            False
+            self.config.get("debug")["Logs"]
         )
         self.status = SS.oldLogs
         self.file(SE.notify, "Loading old logs (if any)")
@@ -81,7 +95,10 @@ class MCO:
 
         # API
         self.file(SE.notify, "Loading API")
-        self.api = API(self.config.get("token"), True)
+        self.api = API(
+            self.config.get("token"), 
+            self.config.get("debug")["API"]
+        )
         self.api.printHypixelStats()
         self.api.printMinecraftStats()
 
@@ -137,14 +154,14 @@ class MCO:
                 # Note: This can be decreased to increase responsiveness,
                 #       but it may break certain elements of the program.
                 # Use at your own risk
-                time.sleep(0.1)
+                time.sleep(self.sleepPerCycle)
 
 
         except Exception as e:
             self.commandSender.available = False
             self.file(SE.error, "An uncaught exception has been raised in the main loop: {}".format(e))
             self.file(SE.error, "Disabling all command outputs of the program to prevent potential damage")
-            self.file(SE.error, traceback.format_exc())
+            self.file(SE.error, traceback.format_exception())
 
 
         # Shutdown
@@ -173,19 +190,24 @@ class MCO:
         # Check for logger party member missing tier 2
         if self.logger.partyMemberMissingTwo:
             self.logger.partyMemberMissingTwo = False
-            if self.config.get("leavePartyMemberMissing"): self.commandSender.pleave(CO.partymissing)
+            if self.config.get("leavePartyMemberMissing"): self.file(CO.partymissing, self.commandSender.pleave(CO.partymissing))
 
         # Check for autoleave
         if self.logger.autoLeave:
-            self.logger.autoLeave = False
-            time.sleep(2)
-            if self.config.get("autoCommands")["autoLeave"]: 
-                self.commandSender.leave(CO.autoleave)
-                if self.logger.party != None and len(self.logger.party) > 1 and self.config.get("autoCommands")["autoPWarp"]:
-                    time.sleep(0.5)
+            if self.autoLeaveCount * self.sleepPerCycle >= self.config.get("autoLeaveDelaySeconds"):
+                self.autoLeaveCount = 0
+                self.logger.autoLeave = False
+                if self.config.get("autoCommands")["autoLeave"]:
+                    self.commandSender.leave(CO.autoleave)
+                    if self.logger.party != None and len(self.logger.party) > 1 and self.config.get("autoCommands")["autoPWarp"]:
+                        time.sleep(1.0)
+                        self.commandSender.pwarp(CO.autoleave)
+                elif self.config.get("autoCommands")["autoPWarp"]:
                     self.commandSender.pwarp(CO.autoleave)
-            elif self.config.get("autoCommands")["autoPWarp"]:
-                self.commandSender.pwarp(CO.autoleave)
+            else:
+                self.autoLeaveCount += 1
+        else:
+            self.autoLeaveCount = 0
 
         # Check for party member DC
         if self.logger.autoLeavePartyLeave:
@@ -220,6 +242,15 @@ class MCO:
                         self.commandSender.type("/p " + player, CO.autoinvite)
                     elif True: #TODO: Add auto statistics check and invite
                         self.commandSender.type("/p " + player, CO.autoinvite)
+
+        # Check for autotrash
+        if self.logger.toxicReaction != None:
+            if self.config.get("autoTrash"):
+                if self.config.get("autoTrashOof"):
+                    self.commandSender.type(":OOF: " + self.logger.toxicReaction)
+                else:
+                    self.commandSender.type(self.logger.toxicReaction)
+            self.logger.toxicReaction = None
 
     def controllerTask(self):
         self.controller.hotload()
