@@ -40,17 +40,19 @@ class PlayerQueue:
             stars (int): The amount of stars for the player
         """
         if not name in self.queue:
-            self.queue[name] = {"rank": rank, "stars": stars, "origin": stars}
+            info = {"rank": rank, "stars": stars, "origin": origin}
         else:
             info = self.queue[name]
-            savedRank = info.get("rank")
-            savedStars = info.get("stars")
-            savedOrigin = info.get("origin")
+            rank =      rank    if rank     != "UNK" else info.get("rank")
+            stars =     stars   if stars    != -1    else info.get("stars")
+            origin =    origin  if origin   != "UNK" else info.get("origin")
             info = {
-                "rank": (rank if rank != "UNK" else savedRank),
-                "stars": (stars if stars != -1 else savedStars),
-                "origin": (origin if origin != "UNK" else savedOrigin)
+                "rank": rank,
+                "stars": stars,
+                "origin": origin
             }
+
+        self.queue[name] = info
         self.updateEmpty()
 
     def reset(self):
