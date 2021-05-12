@@ -8,17 +8,31 @@ class LogMonitor:
         os.makedirs("/".join(combinedLog.split("/")[:-1]))
     open(combinedLog, "w").close() # Reset file
 
+    # Do not break anything if not reset
     isPartyLeader = None
     lobbyName = None
     ownUsername = None
     newToken = None
     debug = None
 
+    resetStats = False
+
     modificationTime = 0
     lineNumber = 0
-    playersInLobby = 0
     lobbyCap = 0
     timeLeftEstimate = 0
+
+    toxicMessages = {
+        "trash": "You lost to trash!",
+        "bad": "You lost to bad players!",
+        "gay": "You lost to gays!",
+        "suck": "You lost to players that suck!"
+    }
+
+    status = GS.unknown
+
+    # Must be reset after reading old logs
+    toxicReaction = None
 
     autoWho = False
     autoLeave = False
@@ -26,17 +40,12 @@ class LogMonitor:
     autoLeavePartyLeave = False
     partyMemberMissing = False
     partyMemberMissingTwo = False
-
-    resetStats = False
     isStartup = False
 
     autoInvite = []
     failedWho = []
-
     game = []
     party = []
-
-    status = GS.unknown
 
     queue = PlayerQueue()
     left = PlayerQueue()
@@ -52,7 +61,13 @@ class LogMonitor:
         self.autoLeavePartyLeave = False
         self.resetStats = False
         self.autoPartyList = False
+        self.partyMemberMissing = False
+        self.partyMemberMissingTwo = False
+        self.toxicReaction = None
         self.autoInvite = []
+        self.failedWho = []
+        self.game = []
+        self.party = []
         self.left.reset()
         self.queue.reset()
 
@@ -118,6 +133,8 @@ class LogMonitor:
         """
         if line.startswith("[") and line.split(" ")[0].endswith("?]") and (line.split(" ")[1].endswith(":") or line.split(" ")[2].endswith(":")) and line.count(" ") > 1:
             self.lobbyChatMessage(line)
+        elif line.startswith("ONLINE:"):
+            self.whoCommand(line)
         elif (line.split(" ")[0].endswith(":") or line.split(" ")[1].endswith(":")) and line.count(" ") > 1 and (self.status == GS.inGame or self.status == GS.gameLobby):
             self.gameChatMessage(line)
         elif line.startswith("You are currently connected to server ") or line.startswith("Sending you to") or line.startswith("Taking you to"):
@@ -160,8 +177,6 @@ class LogMonitor:
             self.playerJoinGame(line)
         elif line.endswith(" reconnected."):
             self.playerRejoinGame(line)
-        elif line.startswith("ONLINE:"):
-            self.whoCommand(line)
         elif line == "You are AFK. Move around to return from AFK.":
             self.afk()
         elif line.endswith("has quit!") or line.endswith("disconnected"):
@@ -240,6 +255,10 @@ class LogMonitor:
             [RANK] username: message may contain spaces
         """
 
+        if not self.status == GS.inGame:
+            self.unprocessed(line)
+            return
+
         split = line.split(" ")
 
         # Retrieve rank, username and message
@@ -261,6 +280,10 @@ class LogMonitor:
             rank = ""
         else:
             rank = "[" + rank + "] " if rank != "NON" else ""
+
+        if self.status == GS.afterGame:
+            self.afterGameChat(message.strip())
+            return
 
         if (message.count("/who") > 0 and message.count(" ") < 2) or\
             (message.count("who") > 0 and message.count(" ") == 0):
@@ -288,17 +311,20 @@ class LogMonitor:
             Unchanged
         """
 
-        # Reset the lobby counter
-        self.playersInLobby = 0
-        self.timeLeftEstimate = 0
-
         # Retrieve the lobby name
-        name = line.removeprefix("You are currently connected to server").removeprefix("Sending you to").removeprefix("Taking you to").strip().split(' ')[0]
+        name = line.removeprefix("You are currently connected to server").removeprefix("Sending you to").removeprefix("Taking you to").removesuffix("!").strip().split(' ')[0]
 
         # Set the lobby name if changed
         if name != self.lobbyName:
-            self.lobbyName = name
+
+            # Reset the lobby counter
+            self.game = []
+            self.timeLeftEstimate = 0
+
             self.file(CE.lobby, "[{}] -> [{}]".format(self.lobbyName, name))
+
+            # Set the lobby name
+            self.lobbyName = name
 
     def voided(self, line: str):
         """Process a fell in the void event
@@ -360,7 +386,7 @@ class LogMonitor:
         self.status = GS.mainLobby
 
         # Reset the lobby counter
-        self.playersInLobby = 0
+        self.game = []
         self.timeLeftEstimate = 0
 
         line = line.removeprefix(">>>").removesuffix("joined the lobby!").strip().split(" ")
@@ -768,7 +794,7 @@ class LogMonitor:
             InGame (if in lobby)
         """
         if self.status == GS.inGame:
-            self.status = GS.mainLobby
+            self.status = GS.afterGame
             self.autoLeave = True
             self.resetStats = True
             self.game = []
@@ -796,21 +822,20 @@ class LogMonitor:
 
         name = line[0]
         x = line[-1].replace("(","").replace(")!","").split("/")
-        joinNumber = int(x[0])
         lobbyCap = int(x[1])
-
-        if name == self.ownUsername and joinNumber > 1:
-            self.autoWho = True
 
         # Store player by username
         self.queue.add(name, origin=GO.gameLobby)
         self.game.append(name)
 
+        if name == self.ownUsername and int(x[0]) > 1:
+            self.autoWho = True
+
         # Save the amount of players in the lobby
-        self.playersInLobby = joinNumber
         self.lobbyCap = lobbyCap
 
-        self.file(CE.join, "{} ({}/{})".format(name, joinNumber, lobbyCap))
+        print(", ".join(self.game))
+        self.file(CE.join, "{} ({}/{})".format(name, len(self.game), lobbyCap))
         if self.debug: self.file(CE.join, "Currently in lobby ({}): {}".format(len(self.game), self.game))
 
     def playerRejoinGame(self, line: str):
@@ -843,11 +868,12 @@ class LogMonitor:
         """
         self.status = GS.gameLobby
         line = line.removeprefix("ONLINE: ").split(", ")
-        self.playersInLobby = len(line)
         self.resetStats = True
         for username in line:
             self.file(CE.who, username)
             self.queue.add(username, origin=GO.gameLobby)
+            if not username in self.game:
+                self.game.append(username)
         self.file(CE.who, "({}/{}) players in the lobby".format(len(line), self.lobbyCap))
 
     def afk(self):
@@ -874,7 +900,6 @@ class LogMonitor:
         """
 
         # Remove one player from the lobby count
-        self.playersInLobby -= 1
 
         # Remove the player from the queue
         name = line.removesuffix(" has quit!").removesuffix("disconnected").strip()
@@ -886,11 +911,10 @@ class LogMonitor:
             self.file(CE.lobby, "{} left but were not in the game! BUG?!".format(name))
             self.file(CE.lobby, "Currently in game: {}".format(", ".join(self.game)))
 
-        self.file(CE.quit, "{} ({}/{})".format(name, self.playersInLobby, self.lobbyCap))
+        self.file(CE.quit, "{} ({}/{})".format(name, len(self.game), self.lobbyCap))
 
         if name == self.ownUsername:
             self.file(CE.lobby, "Left lobby [{}]".format(self.lobbyName))
-
 
     def gameTime(self, line: str):
         """Process a game lobby time event
@@ -906,15 +930,17 @@ class LogMonitor:
         """
         self.status = GS.gameLobby
 
-        time = line.removeprefix("The game starts in").removesuffix("!").removesuffix("s").removesuffix("second").strip()
+        time = int(line.removeprefix("The game starts in").removesuffix("!").removesuffix("s").removesuffix("second").strip())
         self.timeLeftEstimate = time
-        for player in self.party:
-            if not player in self.game:
-                if self.partyMemberMissing:
-                    self.partyMemberMissingTwo = True
-                self.partyMemberMissing = True
+        if self.timeLeftEstimate > 3:
+            for player in self.party:
+                if not player in self.game:
+                    self.file(CE.lobby, "Party member missing! {}".format(player))
+                    if self.partyMemberMissing:
+                        self.partyMemberMissingTwo = True
+                    self.partyMemberMissing = True
 
-        self.file(CE.time, time + "s")
+        self.file(CE.time, str(time) + "s")
 
     def newAPIKey(self, line: str):
         """Process a new api key event
@@ -963,6 +989,28 @@ class LogMonitor:
             self.unprocessed(" ".join(line))
         else:
             self.file(CE.chat, "{}{}: {}".format("[" + rank + "] " if rank != "NON" else "", name.removesuffix(":"), message))
+
+    def afterGameChat(self, message: str):
+        """Process a potential after game toxic message
+
+        Args:
+            rank (str): Rank of the user
+            user (str): Name of the user
+            line (str): Line to process
+
+        Examples:
+            You are trash
+            You are gay
+            You are bad
+            Etc...
+
+        Status:
+            afterGame (should already be set, will not be set here)
+        """
+        for word in message.split(" "):
+            if word.lower() in self.toxicMessages.keys():
+                self.toxicReaction = self.toxicMessages[word]
+                return
 
     def unprocessed(self, line: str):
         """Process an unprocessed message event
