@@ -49,7 +49,7 @@ class API:
             return
         if failed > 0:
             self.file("MC", "API has been down for {} seconds, but has resumed work.".format(str(failed * 2)))
-        self.file("REQ", "Fetching statistics for: " + ", ".join(playerQueue), False)
+        if self.debug: self.file("REQ", "Fetching statistics for: " + ", ".join(playerQueue), False)
         threads = []
         with ThreadPoolExecutor(max_workers=10) as executor:
             count = 0
@@ -155,7 +155,7 @@ class API:
                 if self.debug: self.file("REQ", player + "'s stats download successful", False)
                 self.stats[uuid] = request["player"]
                 if self.debug: self.verifyPlayername(player, uuid, request["player"]["playername"], request["player"]["uuid"])
-                self.file("HY", "Successfully retrieved statistics.", False)
+                if self.debug: self.file("HY", "Successfully retrieved statistics.", False)
                 return request["player"]
             elif self.debug and request != None:
                 self.file("HY", "Error when getting Stats for {}: {}".format(player, request["cause"] if request != None and "cause" in request else ("Request is 'None'" if request == "None" else request)))
