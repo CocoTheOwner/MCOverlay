@@ -108,3 +108,74 @@ class CommandOrigin:
     autoinvite = "Auto Invite"
     partyleft = "Party Member Left"
     partymissing = "Party Member Missing"
+
+class PlayerTags:
+    party = ["P", "Party"]
+    guild = ["G", "Guild"]
+    nick = ["N", "Nick"]
+    alt = ["A", "Alt"]
+
+class Statistics:
+    HypixelLevel = 0
+    Tags = {}
+    for tag in dir(PlayerTags):
+        Tags[tag] = False
+    BedwarsStats = {
+        "Kills": False,
+        "Deaths": False,
+        "Beds": False,
+        "Finals": False,
+        "Wins": False,
+        "Losses": False,
+        "FKDR": False,
+        "Kill/Death": False,
+        "BedB/BedL": False,
+        "Kill/Game": False,
+        "BedB/Game": False,
+        "BedL/Game": False,
+        "Finals/Game": False,
+        "Win/Loss": False,
+    }
+    Statistics = {
+        "Bedwars": {
+            "Stars": False,
+            "Index": False, # = stars * FKDR ^ 2
+            "Overall": BedwarsStats,
+            "Solo": BedwarsStats,
+            "Duo": BedwarsStats,
+            "3s": BedwarsStats,
+            "4s": BedwarsStats,
+            "4v4": BedwarsStats
+        },
+        "BedwarsDreams": {
+            "Stars": False,
+            "Index": False,
+            "Overall": BedwarsStats,
+            "Rush": {
+                "Duo": BedwarsStats,
+                "4s": BedwarsStats,
+                "Overall": BedwarsStats
+            },
+            "Ultimate": {
+                "Duo": BedwarsStats,
+                "4s": BedwarsStats,
+                "Overall": BedwarsStats
+            },
+            "Lucky": {
+                "Duo": BedwarsStats,
+                "4s": BedwarsStats,
+                "Overall": BedwarsStats,
+            },
+            "Armed": {
+                "Duo": BedwarsStats,
+                "4s": BedwarsStats,
+                "Overall": BedwarsStats
+            },
+            "Voidless": {
+                "Duo": BedwarsStats,
+                "4s": BedwarsStats,
+                "Overall": BedwarsStats
+            },
+            "Castle": BedwarsStats
+        }
+    }
