@@ -44,6 +44,7 @@ defaultConfig = {
         "Logs": False,
         "Cycle": False
     },
+    "initialPListWhoDelay": 3,
     "refreshesPerSecond": 10,
     "threads": 10,
     "commandCooldown": 2
@@ -125,6 +126,9 @@ class MCO:
 
         # Check for initial commands
         if self.config.get("runWhoPListOnStartup"):
+            wait = self.config.get("initialPListWhoDelay")
+            self.file(SE.notify, "Waiting for {}s to send /p list and /who".format(wait))
+            time.sleep(wait)
             self.file(SE.command, self.commandSender.plist(CO.startup))
             time.sleep(0.25)
             self.file(SE.command, self.commandSender.who(CO.startup))
