@@ -26,6 +26,7 @@ class ChatEvents:
     died = "Death"
 
     # Macros
+    error = "ERROR"
     all = "All"
     none = []
 
