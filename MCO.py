@@ -3,9 +3,9 @@ from Enums import GameOrigin as GO, CommandOrigin as CO, SystemEvents as SE, Sys
 from API import API
 from LogMonitor import LogMonitor
 from CommandSender import CommandSender
+from StatInterpreter import getStats
 from Config import Config
-import time
-import traceback
+import time, traceback
 
 defaultConfig = {
     "ownUsername": "cocodef9",
@@ -62,6 +62,10 @@ class MCO:
     autoInviteToggle = True
     commandSender = None
     api = None
+    timeFromStart = time.time()
+    nextCycleInformation = 10
+    cycleTimeTenSeconds = 0
+    cycle = 0
 
     def __init__(self):
         
@@ -77,7 +81,7 @@ class MCO:
         self.controller = Config('./config/controller.json', defaultController)
 
         # Set refresh rate
-        self.sleepPerCycle = round(1/self.config.get("refreshesPerSecond"))
+        self.sleepPerCycle = 1/self.config.get("refreshesPerSecond")
 
         # LogMonitor
         self.file(SE.notify, "Loading log monitor")
@@ -113,51 +117,23 @@ class MCO:
         self.file(SE.notify, "Finished initializing")
 
     def start(self):
+        """Runs the overlay
+        """
 
+        # Check for initial commands
         if self.config.get("runWhoPListOnStartup"):
             self.commandSender.plist(CO.startup)
             time.sleep(0.25)
             self.commandSender.who(CO.startup)
 
+        # Update status
+        self.status = SS.running
+
+        # Main loop
+        self.file(SE.notify, "Starting main loop")
+        self.timeFromStart = time.time()
         try:
-
-            # Update status
-            self.status = SS.running
-            
-            cycle = 0
-
-            # Main loop
-            self.file(SE.notify, "Starting main loop")
-            while True:
-                # Update cycle number (1 per second)
-                cycle += 0.1
-
-                if cycle % 60 == 0:
-                    self.api.printHypixelStats()
-                    self.api.printMinecraftStats()
-
-                # Update logger
-                self.logger.tick()
-
-                # See if there are config changes
-                self.config.hotload()
-
-                # Check for logger tasks
-                self.loggerTasks()
-
-                # Update player definitions
-                self.statisticsTasks()
-
-                # Check controller
-                if self.controllerTask(): break
-
-                # Wait a short while before refreshing
-                # Note: This can be decreased to increase responsiveness,
-                #       but it may break certain elements of the program.
-                # Use at your own risk
-                time.sleep(self.sleepPerCycle)
-
-
+            self.loop()
         except Exception as e:
             self.commandSender.available = False
             self.file(SE.error, "An uncaught exception has been raised in the main loop: {}".format(e))
@@ -165,13 +141,63 @@ class MCO:
             self.file(SE.error, traceback.format_exc())
             raise e
 
-
         # Shutdown
         self.status = SS.shutdown
         self.file(SE.notify, "Closing MCO")
         exit()
+
+    def loop(self):
+        """Runs the main cycle loop
+        """
+        while True:
+
+            # Update cycle number (1 per second)
+            self.cycle += 1
+
+            # Print api & cycle time information
+            if self.cycle * self.sleepPerCycle >= self.nextCycleInformation:
+                self.nextCycleInformation += 10
+                self.api.printHypixelStats()
+                self.api.printMinecraftStats()
+                self.file(SE.notify, "Overlay load: {}%".format(round(10.0 / self.cycleTimeTenSeconds,2)*100))
+                self.cycleTimeTenSeconds = 0
+
+            # See if there are config changes
+            self.config.hotload()
+
+            # Check for logger tasks
+            self.loggerTasks()
+
+            # Update player definitions
+            self.statisticsTasks()
+
+            # Check controller
+            if self.controllerTask(): break
+
+            # Wait a short while before refreshing
+            cycleTime = round(time.time() - self.timeFromStart, 4)
+            self.cycleTimeTenSeconds += cycleTime
+            time.sleep(max(self.sleepPerCycle - cycleTime, 0))
+            self.timeFromStart = time.time()
         
     def loggerTasks(self):
+        """Runs logger tasks:
+        - Tick the logger
+        - Check for new token
+        - Check for autowho
+        - Check for autoPList
+        - Check for party member missing
+        - Check for autoLeave
+        - Check for autoLeaveParty
+        - Check for failedWho's
+        - Check for statistics resets
+        - Check for autoInvites
+        - Check for autoTrash
+        """
+        
+        # Update logger
+        self.logger.tick()
+
         # Check for token update
         if self.logger.newToken != None:
             self.api.token = self.logger.newToken
@@ -253,6 +279,10 @@ class MCO:
             self.logger.toxicReaction = None
 
     def controllerTask(self):
+        """Runs controller tasks:
+        - Process config-stop
+        - Process getAPI request
+        """
         self.controller.hotload()
         if self.controller.get("stop"):
             self.controller.set("stop", False)
@@ -266,12 +296,24 @@ class MCO:
             return False
 
     def statisticsTasks(self):
+        """Runs statistics tasks:
+        - Retrieving player statistics
+        - Processing received statistics
+        """
+
+        # Retrieve player download queue
         queue = self.logger.queue.get()
+
+        # Prevent having empty
         if len(queue) == 0:
             return
+
+        # Check if statistics are enabled
         if self.config.get("enableStatistics-Do-Not-Disable!"):
             pd = self.config.get("downloadStatsOfPlayersIn")
             q = {}
+
+            # Check if origin is enabled
             for player in queue.keys():
                 origin = queue[player]["origin"]
                 if ((origin == GO.mainChat and pd[GO.mainChat]) or
@@ -280,9 +322,18 @@ class MCO:
                     (origin == GO.gameLobby and pd[GO.gameLobby]) or
                     (origin == GO.party)):
                     q[player] = queue[player]
+
+            # Fetch statistics for players
             self.api.fetch(q)
-        for stat in self.api.stats:
-            print(stat["Overall"]["name"])
+        
+        # Retrieve previously retrieved statistics
+        stats = self.api.stats.copy()
+        self.api.stats.clear()
+
+        # Loop over all statistics
+        for stat in stats:
+            
+            print(getStats(stats[stat])["Overall"])
 
     def file(self, type: str, line: str):
         """Prints a line to console in the proper format
