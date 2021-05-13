@@ -3,14 +3,18 @@
 
 # Task Checklist
 ## Backend
-- [ ] Statistics to SQL
+- [ ] Config options for:
+	- [ ] Delay initial /who /plist
+	- [ ] Toggle initial alt+tab
+- [ ] Do not reset config upon startup
 - [ ] AutoObby
-- [ ] AutoTrash
+- [X] AutoTrash
 	- Trash
 	- Bad
 	- Suck
 	- Gay
 	- :oof:
+	- [ ] Check if works
 - [ ] SplitWarner
 	- [ ] Requires death event.
 	- [ ] Requires list of teammates (can be done from party only, I think)
@@ -100,3 +104,5 @@
 - [X] Empty party (The party was disbanded because all invites expired and the party was empty)
 - [X] Disbanded the party ([RANK] username has disbanded the party!)
 - [X] Configurable thread count (api gets x-1 since main thread runs all other stuff)
+- ~~[ ] Statistics to SQL~~ Scrapped in favour of native python implementation
+- [X] Native python statistics implementation
