@@ -144,7 +144,7 @@ class MCO:
                 self.loggerTasks()
 
                 # Update player definitions
-                self.statisticsTask()
+                self.statisticsTasks()
 
                 # Check controller
                 if self.controllerTask(): break
@@ -263,7 +263,7 @@ class MCO:
             self.api.printMinecraftStats()
             return False
 
-    def statisticsTask(self):
+    def statisticsTasks(self):
         queue = self.logger.queue.get()
         if len(queue) == 0:
             return
@@ -279,6 +279,8 @@ class MCO:
                     (origin == GO.party)):
                     q[player] = queue[player]
             self.api.fetch(q)
+        for stat in self.api.stats:
+            print(stat["Overall"]["name"])
 
     def file(self, type: str, line: str):
         """Prints a line to console in the proper format
