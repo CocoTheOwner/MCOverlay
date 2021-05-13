@@ -99,3 +99,4 @@
 - [X] Kicked from party (You have been kicked from the party by [RANK] username)
 - [X] Empty party (The party was disbanded because all invites expired and the party was empty)
 - [X] Disbanded the party ([RANK] username has disbanded the party!)
+- [X] Configurable thread count (api gets x-1 since main thread runs all other stuff)
