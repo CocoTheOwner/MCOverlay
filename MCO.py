@@ -1,6 +1,7 @@
 from PlayerQueue import PlayerQueue
 from Enums import GameOrigin as GO, CommandOrigin as CO, SystemEvents as SE, SystemStatus as SS
 from API import API
+from GUI import GUI
 from LogMonitor import LogMonitor
 from CommandSender import CommandSender
 from StatInterpreter import getStats
@@ -70,6 +71,7 @@ class MCO:
     nextCycleInformation = 10
     cycleTimeTenSeconds = 0
     cycle = 0
+    GUI = None
 
     def __init__(self):
         
@@ -109,12 +111,17 @@ class MCO:
             int(self.config.get("threads")) - 1,
             self.config.get("debug")["API"]
         )
+
         self.api.printHypixelStats()
         self.api.printMinecraftStats()
 
         # CommandSender
         self.file(SE.notify, "Loading Command Sender")
         self.commandSender = CommandSender(self.config.get("commandCooldown"))
+
+        # Init GUI
+        self.file(SE.notify, "Loading GUI")
+        self.GUI = GUI(800, 600, "1.0", ["a", "b", "c"], {})
 
         # Update status
         self.status = SS.waiting
@@ -135,6 +142,10 @@ class MCO:
 
         # Update status
         self.status = SS.running
+
+        # Start GUI
+        # TODO: Put it another thread
+        # self.GUI.run()
 
         # Main loop
         self.file(SE.notify, "Starting main loop")
@@ -242,7 +253,7 @@ class MCO:
                 self.logger.autoLeave = False
                 self.file(SE.command, self.commandSender.leave(CO.autoleave))
                 if self.logger.party != None and len(self.logger.party) != 0 and self.config.get("autoCommands")["autoPWarp"]:
-                    time.sleep(0.75)
+                    time.sleep(1.0)
                     self.file(SE.command, self.commandSender.pwarp(CO.autoleave))
             else:
                 self.autoLeaveCount += 1
