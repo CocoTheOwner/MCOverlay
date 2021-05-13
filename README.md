@@ -18,6 +18,8 @@
 			- [ ] Potentially add a chat-based command that lets you enter another
 - [ ] Only load config when it's last edited date is changed
 - [ ] Party member nicked in game
+- [ ] Session lock to prevent multiples
+- [ ] Chat based commands
 ## Frontend
 - [ ] GUI Layout
 - [ ] Selectable statistics in table
