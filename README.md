@@ -3,11 +3,8 @@
 
 # Task Checklist
 ## Backend
-- [ ] Config options for:
-	- [ ] Delay initial /who /plist
-	- [ ] Toggle initial alt+tab
+- [ ] Initial alt+tab + config (overwrite default delay)
 - [ ] Do not reset config upon startup
-- [ ] AutoObby
 - [X] AutoTrash
 	- Trash
 	- Bad
@@ -20,6 +17,7 @@
 	- [ ] Requires list of teammates (can be done from party only, I think)
 			- [ ] Potentially add a chat-based command that lets you enter another
 - [ ] Only load config when it's last edited date is changed
+- [ ] Party member nicked in game
 ## Frontend
 - [ ] GUI Layout
 - [ ] Selectable statistics in table
@@ -106,3 +104,6 @@
 - [X] Configurable thread count (api gets x-1 since main thread runs all other stuff)
 - ~~[ ] Statistics to SQL~~ Scrapped in favour of native python implementation
 - [X] Native python statistics implementation
+- [X] Fix autoWho when leaving lobby
+- [X] Config options for:
+	- [X] Delay initial /who /plist
