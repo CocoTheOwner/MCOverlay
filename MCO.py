@@ -43,7 +43,8 @@ defaultConfig = {
         "API": True,
         "Logs": False
     },
-    "refreshesPerSecond": 10
+    "refreshesPerSecond": 10,
+    "threads": 4
 }
 defaultController = {
     "stop": False,
@@ -97,6 +98,7 @@ class MCO:
         self.file(SE.notify, "Loading API")
         self.api = API(
             self.config.get("token"), 
+            int(self.config.get("threads")) - 1,
             self.config.get("debug")["API"]
         )
         self.api.printHypixelStats()

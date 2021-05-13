@@ -10,6 +10,7 @@ ua = UserAgent()
 class API:
     token = ""
     debug = False
+    threads = 0
 
     uuidsFile = Config("./cache/uuids.json", {})
     uuids = uuidsFile.config
@@ -23,9 +24,10 @@ class API:
     HYAPIRequests = []
     HYAPIRequestsMax = 120 # Per minute.
 
-    def __init__(self, token: str, debug = False):
+    def __init__(self, token: str, threads: int, debug = False):
         self.token = token
         self.debug = debug
+        self.threads = threads
 
     def fetch(self, playerQueue):
         """Fetches all player data from a queue
@@ -41,17 +43,17 @@ class API:
             if MCAPI == None or MCAPI["Status"] != "OK":
                 self.file("MC", "API is down!")
                 failed += 1
-                time.sleep(2)
+                time.sleep(1)
             else:
                 break
         if failed == maxFailed:
-            self.file("MC", "API has been down for 2 minutes. Fetch failed!")
+            self.file("MC", "API has been down for 1 minute. Fetch failed!")
             return
         if failed > 0:
-            self.file("MC", "API has been down for {} seconds, but has resumed work.".format(str(failed * 2)))
+            self.file("MC", "API has been down for {} seconds, but has resumed work.".format(failed))
         if self.debug: self.file("REQ", "Fetching statistics for: " + ", ".join(playerQueue), False)
         threads = []
-        with ThreadPoolExecutor(max_workers=10) as executor:
+        with ThreadPoolExecutor(max_workers=self.threads) as executor:
             count = 0
             total = len(playerQueue)
             for player in playerQueue:
