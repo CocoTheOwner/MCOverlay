@@ -40,11 +40,13 @@ defaultConfig = {
     "runWhoPListOnStartup": True,
     "enableStatistics-Do-Not-Disable!": True,
     "debug": {
-        "API": True,
-        "Logs": False
+        "API": False,
+        "Logs": False,
+        "Cycle": False
     },
     "refreshesPerSecond": 10,
-    "threads": 4
+    "threads": 10,
+    "commandCooldown": 2
 }
 defaultController = {
     "stop": False,
@@ -63,6 +65,7 @@ class MCO:
     commandSender = None
     api = None
     timeFromStart = time.time()
+    startTime = time.time()
     nextCycleInformation = 10
     cycleTimeTenSeconds = 0
     cycle = 0
@@ -110,7 +113,7 @@ class MCO:
 
         # CommandSender
         self.file(SE.notify, "Loading Command Sender")
-        self.commandSender = CommandSender()
+        self.commandSender = CommandSender(self.config.get("commandCooldown"))
 
         # Update status
         self.status = SS.waiting
@@ -122,9 +125,9 @@ class MCO:
 
         # Check for initial commands
         if self.config.get("runWhoPListOnStartup"):
-            self.commandSender.plist(CO.startup)
+            self.file(SE.command, self.commandSender.plist(CO.startup))
             time.sleep(0.25)
-            self.commandSender.who(CO.startup)
+            self.file(SE.command, self.commandSender.who(CO.startup))
 
         # Update status
         self.status = SS.running
@@ -155,12 +158,18 @@ class MCO:
             self.cycle += 1
 
             # Print api & cycle time information
-            if self.cycle * self.sleepPerCycle >= self.nextCycleInformation:
-                self.nextCycleInformation += 10
-                self.api.printHypixelStats()
-                self.api.printMinecraftStats()
-                self.file(SE.notify, "Overlay load: {}%".format(round(10.0 / self.cycleTimeTenSeconds,2)*100))
-                self.cycleTimeTenSeconds = 0
+            if self.config.get("debug")["Cycle"]:
+                if time.time() - self.startTime >= self.nextCycleInformation:
+                    self.nextCycleInformation += 10
+                    self.api.printHypixelStats()
+                    self.api.printMinecraftStats()
+                    self.file(SE.notify, "Overlay load: {load}% | Cycle {cycle} | Last 10s usage: {tens}s | Running for {total}s".format(
+                        load = round(self.cycleTimeTenSeconds*10,2), 
+                        cycle = self.cycle, 
+                        tens = round(self.cycleTimeTenSeconds,2),
+                        total = round(time.time() - self.startTime,1)
+                    ))
+                    self.cycleTimeTenSeconds = 0
 
             # See if there are config changes
             self.config.hotload()
@@ -208,12 +217,12 @@ class MCO:
         # Check for autowho
         if self.logger.autoWho:
             self.logger.autoWho = False
-            if self.config.get("autoCommands")["autoWho"]: self.commandSender.who(CO.autowho)
+            if self.config.get("autoCommands")["autoWho"]: self.file(SE.command, self.commandSender.who(CO.autowho))
 
         # Check for autoplist
         if self.logger.autoPartyList:
             self.logger.autoPartyList = False
-            if self.config.get("autoCommands")["autoPList"]: self.commandSender.plist(CO.autoplist)
+            if self.config.get("autoCommands")["autoPList"]: self.file(SE.command, self.commandSender.plist(CO.autoplist))
 
         # Check for logger party member missing tier 2
         if self.logger.partyMemberMissingTwo:
@@ -222,14 +231,15 @@ class MCO:
 
         # Check for autoleave
         if self.logger.autoLeave and self.config.get("autoCommands")["autoLeave"]:
-            self.file(SE.notify, "Attempting autoleave: {}s / {}s".format(self.autoLeaveCount * self.sleepPerCycle, self.config.get("autoCommands")["autoLeaveDelaySeconds"]))
+            if round(self.autoLeaveCount * self.sleepPerCycle,2) % 1 == 0:
+                self.file(SE.notify, "Attempting autoleave in: {}s".format(self.config.get("autoCommands")["autoLeaveDelaySeconds"] - round(self.autoLeaveCount * self.sleepPerCycle,2)))
             if self.autoLeaveCount * self.sleepPerCycle >= self.config.get("autoCommands")["autoLeaveDelaySeconds"]:
                 self.autoLeaveCount = 0
                 self.logger.autoLeave = False
-                self.commandSender.leave(CO.autoleave)
-                if self.logger.party != None and len(self.logger.party) > 1 and self.config.get("autoCommands")["autoPWarp"]:
-                    time.sleep(1.0)
-                    self.commandSender.pwarp(CO.autoleave)
+                self.file(SE.command, self.commandSender.leave(CO.autoleave))
+                if self.logger.party != None and len(self.logger.party) != 0 and self.config.get("autoCommands")["autoPWarp"]:
+                    time.sleep(0.75)
+                    self.file(SE.command, self.commandSender.pwarp(CO.autoleave))
             else:
                 self.autoLeaveCount += 1
         else:
@@ -239,9 +249,9 @@ class MCO:
         if self.logger.autoLeavePartyLeave:
             self.logger.autoLeavePartyLeave = False
             if self.config.get("autoCommands")["autoLeavePartyDC"]:
-                self.commandSender.leave(CO.partyleft)
+                self.file(SE.command, self.commandSender.leave(CO.partyleft))
                 time.sleep(0.25)
-                self.commandSender.pwarp(CO.partyleft)
+                self.file(SE.command, self.commandSender.pwarp(CO.partyleft))
 
         # Check for failed autowho's by others
         if len(self.logger.failedWho) > 0:
@@ -265,17 +275,17 @@ class MCO:
             if self.config.get("autoCommands")["autoInvite"]:
                 for player in inv:
                     if player in self.config.get("autoInviteStatBypass"):
-                        self.commandSender.type("/p " + player, CO.autoinvite)
+                        self.file(SE.command, self.commandSender.type("/p " + player, CO.autoinvite))
                     elif True: #TODO: Add auto statistics check and invite
-                        self.commandSender.type("/p " + player, CO.autoinvite)
+                        self.file(SE.command, self.commandSender.type("/p " + player, CO.autoinvite))
 
         # Check for autotrash
         if self.logger.toxicReaction != None:
             if self.config.get("autoTrash"):
                 if self.config.get("autoTrashOof"):
-                    self.commandSender.type(":OOF: " + self.logger.toxicReaction)
+                    self.file(SE.command, self.commandSender.type(":OOF: " + self.logger.toxicReaction))
                 else:
-                    self.commandSender.type(self.logger.toxicReaction)
+                    self.file(SE.command, self.commandSender.type(self.logger.toxicReaction))
             self.logger.toxicReaction = None
 
     def controllerTask(self):
@@ -332,9 +342,16 @@ class MCO:
 
         # Loop over all statistics
         for stat in stats:
-            
-            print(getStats(stats[stat])["Overall"])
-
+            s = getStats(stats[stat])
+            x = {}
+            res = ""
+            if "DuoRush" in s:
+                x = x | s["DuoRush"]
+            if "Overall" in s:
+                res = "Name: " + s["Overall"]["name"] + ", "
+            for key in x.keys():
+                res += "{}: {}, ".format(key, x[key])
+            self.file(SE.notify, res.removesuffix(", "))
     def file(self, type: str, line: str):
         """Prints a line to console in the proper format
         
