@@ -24,6 +24,7 @@ class ChatEvents:
     bed = "Bed"
     eliminated = "Elim"
     died = "Death"
+    toxic = "Toxic"
 
     # Macros
     error = "ERROR"
@@ -46,7 +47,8 @@ class ChatEvents:
         party,
         died,
         afk,
-        bug
+        bug,
+        toxic
     ]
     system = [
         quit,
