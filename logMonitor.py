@@ -76,6 +76,10 @@ class LogMonitor:
         """Ticks the logger. Only ticks if there is a log change.
         """
         self.isStartup = isStartup
+        if not os.path.exists(self.logFilePath): 
+            self.file(CE.error, "Log file non-existant! Did you restart?")
+            self.file(CE.error, "If so, ignore this. If you did not, please re-select the log file")
+            return
         if self.modificationTime != os.path.getmtime(self.logFilePath):
             self.modificationTime = os.path.getmtime(self.logFilePath)
             self.readlog()
@@ -240,7 +244,7 @@ class LogMonitor:
         for word in message.strip().split(" "):
             if word.count(self.ownUsername) > 0:
                 # This word mentions one of the main users' usernames, invite this player!
-                self.autoInvite.append(user)
+                if not user in self.party: self.autoInvite.append(user)
 
 
         self.file(CE.chat, "[{}] {}{}: {}".format(stars, rank, user, message.strip()))
@@ -435,7 +439,7 @@ class LogMonitor:
             unchanged
         """
         x = line.removesuffix("has disconnected, they have 5 minutes to rejoin before they are removed from the party.").strip().split(" ")
-        if self.status == GS.gameLobby:
+        if self.status == GS.gameLobby and self.timeLeftEstimate > 5:
             self.autoLeavePartyLeave = True
         if len(x) == 1:
             self.file(CE.party, "Your party member: " + x[0] + " disconnected!")
