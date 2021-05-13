@@ -1,4 +1,4 @@
-import json, time
+import json
 from Enums import Bedwars
 
 def getRank(data: dict):
@@ -73,7 +73,7 @@ def getStats(data: dict):
 
     return stats
 
-    
-stats = getStats(json.loads(open("./statistics/cocodef9.json", "r").read())["player"])
-for key in stats:
-    print("{}: {}".format(key, stats[key]))
+if __name__=="__main__":
+    stats = getStats(json.loads(open("./statistics/cocodef9.json", "r").read())["player"])
+    for key in stats:
+        print("{}: {}".format(key, stats[key]))
