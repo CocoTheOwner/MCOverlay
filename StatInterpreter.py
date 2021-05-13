@@ -13,15 +13,12 @@ def getRank(data: dict):
     else:
         return "NON"
 
-def getGame(stats: dict, game: str):
-    x = get(stats, "stats")
-    if x != None:
-        return get(x, game)
+def getGame(data: dict, game: str):
+    x = get(data, "stats")
+    if x != None: return get(x, game)
 
 def get(data: dict, key: str):
-    if not key in data:
-        return None
-    else: return data[key]
+    if data != None and key in data: return data[key]
 
 def getStats(data: dict):
     bw = getGame(data, "Bedwars")
