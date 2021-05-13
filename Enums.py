@@ -116,102 +116,87 @@ class PlayerTags:
     alt = ["A", "Alt"]
 
 class GameOptions:
+    arcade ="Arcade"
+    arena = "Arena"
+    battleground = "Battleground"
+    hungergames = "HungerGames"
+    mcgo = "MCGO"
+    paintball = "Paintball"
+    quake = "Quake"
+    tntgames = "TNTGames"
+    uhc = "UHC"
+    vampirez = "VampireZ"
+    walls = "Walls"
+    walls3 = "Walls3"
+    gingerbread = "GingerBread"
+    skywars = "SkyWars"
+    truecombat = "TrueCombat"
+    skyclash = "SkyClash"
+    buildbattle = "BuildBattle"
+    murdermystery = "MurderMystery"
+    bedwars = "Bedwars"
+    legacy = "Legacy"
+    duels = "Duels"
+    pit = "Pit"
+    skyblock = "SkyBlock"
+    supersmash = "SuperSmash"
+    speeduhc = "SpeedUHC"
     games = [
-        "Arcade",
-        "Arena",
-        "Battleground",
-        "HungerGames",
-        "MCGO",
-        "Paintball",
-        "Quake",
-        "TNTGames",
-        "UHC",
-        "VampireZ",
-        "Walls",
-        "Walls3",
-        "GingerBread",
-        "SkyWars",
-        "TrueCombat",
-        "SkyClash",
-        "BuildBattle",
-        "MurderMystery",
-        "Bedwars",
-        "Legacy",
-        "Duels",
-        "Pit",
-        "SkyBlock",
-        "SuperSmash",
-        "SpeedUHC"
+        arcade,
+        arena,
+        battleground,
+        hungergames,
+        mcgo,
+        paintball,
+        quake,
+        tntgames,
+        uhc,
+        vampirez,
+        walls,
+        walls3,
+        gingerbread,
+        skywars,
+        truecombat,
+        skyclash,
+        buildbattle,
+        murdermystery,
+        bedwars,
+        legacy,
+        duels,
+        pit,
+        skyblock,
+        supersmash,
+        speeduhc
     ]
 
-class Statistics:
-    HypixelLevel = 0
-    Tags = {}
-    for tag in dir(PlayerTags):
-        Tags[tag] = False
-    BedwarsStats = {
-        "Kills": False,
-        "Deaths": False,
-        "BedB": False,
-        "BedL": False,
-        "Finals": False,
-        "Wins": False,
-        "Losses": False,
-        "Streak": False,
-        "Iron": False,
-        "Gold": False,
-        "Diamonds": False,
-        "Emerals": False,
-        "Resources": False,
-        "FKDR": False,
-        "Kill/Death": False,
-        "BedB/BedL": False,
-        "Kill/Game": False,
-        "BedB/Game": False,
-        "BedL/Game": False,
-        "Finals/Game": False,
-        "Win/Loss": False,
+class Bedwars:
+    stats = {
+        "winstreak": "Winstreak",
+        "wins_bedwars": "Wins",
+        "kills_bedwars": "Kills",
+        "deaths_bedwars": "Deaths",
+        "losses_bedwars": "Losses",
+        "beds_lost_bedwars": "BedsL",
+        "beds_broken_bedwars": "BedsB",
+        "final_kills_bedwars": "FinalKs",
+        "final_deaths_bedwars": "FinalDs",
+        "games_played_bedwars": "Games"
     }
-    Statistics = {
-        "Bedwars": {
-            "Stars": False,
-            "Index": False, # = stars * FKDR ^ 2
-            "Overall": BedwarsStats,
-            "Solo": BedwarsStats,
-            "Duo": BedwarsStats,
-            "3s": BedwarsStats,
-            "4s": BedwarsStats,
-            "4v4": BedwarsStats
-        },
-        "BedwarsDreams": {
-            "Stars": False,
-            "Index": False,
-            "Overall": BedwarsStats,
-            "Rush": {
-                "Duo": BedwarsStats,
-                "4s": BedwarsStats,
-                "Overall": BedwarsStats
-            },
-            "Ultimate": {
-                "Duo": BedwarsStats + {"Kit": False},
-                "4s": BedwarsStats + {"Kit": False},
-                "Overall": BedwarsStats + {"Kit": False}
-            },
-            "Lucky": {
-                "Duo": BedwarsStats,
-                "4s": BedwarsStats,
-                "Overall": BedwarsStats,
-            },
-            "Armed": {
-                "Duo": BedwarsStats,
-                "4s": BedwarsStats,
-                "Overall": BedwarsStats
-            },
-            "Voidless": {
-                "Duo": BedwarsStats,
-                "4s": BedwarsStats,
-                "Overall": BedwarsStats
-            },
-            "Castle": BedwarsStats
-        }
+    modes = {
+        "eight_two_rush": "DuoRush",
+        "four_four_rush": "4sRush",
+        "eight_two_ultimate": "DuoUlt",
+        "four_four_ultimate": "4sUlt",
+        "eight_two_lucky": "DuoLucky",
+        "four_four_lucky": "4sLucky",
+        "eight_two_armed": "DuoArmed",
+        "four_four_armed": "4sArmed",
+        "eight_two_voidless": "DuoVoidL",
+        "four_four_voidless": "4sVoidL",
+        "castle": "Castle",
+        "eight_one": "Solo",
+        "eight_two": "Duo",
+        "four_three": "3s",
+        "four_four": "4s",
+        "two_four": "4v4"
     }
