@@ -155,10 +155,8 @@ class API:
             if self.debug: self.file("REQ", "Downloading stats of {} ({})".format(player, uuid), False)
             request = self.getRequest("https://api.hypixel.net/player?key={}&uuid={}".format(self.token, uuid))
             if request != None and "player" in request:
-                if self.debug: self.file("REQ", player + "'s stats download successful", False)
-                self.stats[uuid] = request["player"]
+                if self.debug: self.file("HY", player + "'s stats download successful", False)
                 if self.debug: self.verifyPlayername(player, uuid, request["player"]["playername"], request["player"]["uuid"])
-                if self.debug: self.file("HY", "Successfully retrieved statistics.", False)
                 return request["player"]
             elif self.debug and request != None:
                 self.file("HY", "Error when getting Stats for {}: {}".format(player, request["cause"] if request != None and "cause" in request else ("Request is 'None'" if request == "None" else request)))
