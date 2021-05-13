@@ -40,7 +40,7 @@ defaultConfig = {
     "runWhoPListOnStartup": True,
     "enableStatistics-Do-Not-Disable!": True,
     "debug": {
-        "API": False,
+        "API": True,
         "Logs": False
     },
     "refreshesPerSecond": 10
