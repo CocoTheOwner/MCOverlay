@@ -4,6 +4,7 @@ __pycache__
 config
 logs
 cache
+statistics
 .idea
 
 # Test file
