@@ -279,4 +279,4 @@ class API:
             type = "REQST"
         else:
             type = "OTHER"
-        print("[ API+ ] {}     | {}: {}".format("ERROR " if isError else "NOTICE", type, line))
+        print("[ API+ ] {}     | {}: {}".format("ERROR " if isError else "Notice", type, line))
