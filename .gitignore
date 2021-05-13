@@ -12,3 +12,4 @@ dist
 # Test file
 test.py
 test*.py
+test.spec
