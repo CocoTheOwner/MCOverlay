@@ -5,6 +5,8 @@ config
 logs
 cache
 statistics
+build
+dist
 .idea
 
 # Test file
