@@ -18,6 +18,7 @@ class GUI:
     newSizeY = None
     hypixelAPILoad = 0
     minecraftAPILoad = 0
+    overlayLoad = 0
     currentWindow = Window.statistics
 
     def __init__(self, winx: int, winy: int, version: str, statisticsTypes: list, statistics: dict):
@@ -37,6 +38,7 @@ class GUI:
         font.setWeight(QFont.Weight.Normal)
         window.setFont(font)
         window.setObjectName(u"background")
+        window.setStyleSheet("QWidget#background {background-color: gray}")
 
     def buildOptions(self):
         self.buildWindow()
@@ -49,8 +51,6 @@ class GUI:
         statTableHeader = QHeaderView(Qt.Orientation.Vertical)
         # self.statTableMain.commitData()
         # https://doc.qt.io/qt-5/sql-model.html
-        for type in self.statTypes:
-            QLabel(type, statTableHeader)
         self.statTableMain.setVerticalHeader(statTableHeader)
         self.statTableMain.setGeometry(
             self.winw(5), self.winh(10),
@@ -66,6 +66,11 @@ class GUI:
             self.winw(20), self.winh(90),
             self.winw(15), self.winh(5)
         )
+        overlayProgressLabel = QLabel("Overlay Load:", self.window())
+        overlayProgressLabel.setGeometry(
+            self.winw(35), self.winh(90),
+            self.winw(15), self.winh(5)
+        )
         self.hypixelProgressBar = QProgressBar(self.window())
         self.hypixelProgressBar.setValue(self.hypixelAPILoad)
         self.hypixelProgressBar.setGeometry(
@@ -76,6 +81,12 @@ class GUI:
         self.minecraftProgressBar.setValue(self.minecraftAPILoad)
         self.minecraftProgressBar.setGeometry(
             self.winw(20), self.winh(95),
+            self.winw(15), self.winh(3)
+        )
+        self.overlayProgressBar = QProgressBar(self.window())
+        self.overlayProgressBar.setValue(self.overlayLoad)
+        self.overlayProgressBar.setGeometry(
+            self.winw(35), self.winh(95),
             self.winw(15), self.winh(3)
         )
         self.statisticsButton = QPushButton("&Stats", self.window())
