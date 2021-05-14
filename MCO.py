@@ -4,7 +4,7 @@ from API import API
 #from GUIez import GUI
 from LogMonitor import LogMonitor
 from CommandSender import CommandSender
-from StatInterpreter import getStats
+from StatInterpreter import Statistics
 from Config import Config
 import time, traceback
 
@@ -353,6 +353,8 @@ class MCO:
         
         # Retrieve previously retrieved statistics
         stats = self.api.stats.copy()
+        #for stat in stats:
+        #    Statistics(stat).printUlt()
         self.api.stats.clear()
 
         # Retrieve statistics we need

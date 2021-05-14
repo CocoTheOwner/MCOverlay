@@ -30,6 +30,9 @@ class Statistics:
     ignored = []
     round = 2 #Decimals
 
+    def printUlt(self):
+        print(print("{}: OIndex {} / UltWS {} / UltFKDR {}".format(s.general_stats["Name"], s.stats["Overall"]["Index"], s.stats["DuoUlt"]["Winstreak"] + s.stats["4sUlt"]["Winstreak"], s.stats["DuoUlt"]["FKDR"] * s.stats["4sUlt"]["FKDR"])))
+
     def __init__(self, data: dict):
 
         bw = getGame(data, "Bedwars")
@@ -76,10 +79,10 @@ class Statistics:
             self.stats[key]["BBBL"] = round(get(self.stats[key],    "BedsB")   / get(self.stats[key], "BedsL"), self.round)
             self.stats[key]["FK/G"] = round(get(self.stats[key],    "FinalKs") / get(self.stats[key], "Games"), self.round)
             self.stats[key]["Index"]= round(get(self.general_stats, "Stars")   * get(self.stats[key], "FKDR")**2, self.round) / 10
+            self.stats[key]["FinalD/Loss"] = round(get(self.stats[key], "FinalDs") / get(self.stats[key], "Losses"))
+            self.stats[key]["BedL/Loss"] = round(get(self.stats[key], "BedsL") / get(self.stats[key], "Losses"))
 
 if __name__=="__main__":
     s = Statistics(json.loads(open("./statistics/cocodef9.json", "r").read())["player"])
     k = DataFrame(s.stats)
-    for key in s.stats.keys():
-        print(str(k[key][["KDR", "FKDR", "Index"]][[0, 1, 2]]) + " <- " + key)
-    print("Overall: " + str(s.general_stats))
+    s.printUlt()
