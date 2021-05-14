@@ -38,10 +38,7 @@ def getStats(data: dict):
 
     ult = get(bw, "selected_ultimate")
     if ult != None:
-        stats["DuoUlt"] = {}
-        stats["DuoUlt"]["UltimateKit"] = ult
-        stats["4sUlt"] = {}
-        stats["4sUlt"]["UltimateKit"] = ult
+        stats["Overall"]["ult"] = ult
 
 
 

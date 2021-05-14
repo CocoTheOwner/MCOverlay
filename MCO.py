@@ -1,12 +1,13 @@
 from PlayerQueue import PlayerQueue
 from Enums import GameOrigin as GO, CommandOrigin as CO, SystemEvents as SE, SystemStatus as SS
 from API import API
-from GUI import GUI
+#from GUIez import GUI
 from LogMonitor import LogMonitor
 from CommandSender import CommandSender
 from StatInterpreter import getStats
 from Config import Config
 import time, traceback
+from threading import Thread
 
 defaultConfig = {
     "ownUsername": "cocodef9",
@@ -21,14 +22,14 @@ defaultConfig = {
     "autoCommands": {
         "autoWho": True,
         "autoInvite": True,
-        "autoLeave": True,
+        "autoLeave": False,
         "autoLeaveDelaySeconds": 10,
         "autoPWarp": True,
         "autoPList": True,
         "autoTrash": True,
         "autoTrashOof": True,
         "autoLeavePartyDC": True,
-        "autoLeavePartyMemberMissing": True
+        "autoLeavePartyMemberMissing": False
     },
     "autoInviteStatBypass": [
         "dungeoneer1",
@@ -121,8 +122,8 @@ class MCO:
 
         # Init GUI
         self.file(SE.notify, "Loading GUI")
-        self.GUI = GUI(800, 600, "1.0", ["a", "b", "c"], {})
-
+        #self.GUI = GUI(800, 600, "1.0", ["a", "b", "c"], {})
+        #self.GUI = GUI()
         # Update status
         self.status = SS.waiting
         self.file(SE.notify, "Finished initializing")
@@ -354,19 +355,34 @@ class MCO:
         # Retrieve previously retrieved statistics
         stats = self.api.stats.copy()
         self.api.stats.clear()
-
+        statString = ""
         # Loop over all statistics
         for stat in stats:
             s = getStats(stats[stat])
-            x = {}
             res = ""
-            if "DuoRush" in s:
-                x = x | s["DuoRush"]
+            a = 0
+            b = 0
+            c = 0
+            d = 0
+            e = "UNK"
+            if "4sUlt" in s:
+                oop = s["4sUlt"]
+                a = s["4sUlt"]["FinalKs"] if "FinalKs" in oop else 0
+                b = s["4sUlt"]["FinalDs"] if "FinalDs" in oop else 0
+            if "DuoUlt" in s:
+                oop = s["DuoUlt"]
+                c = s["DuoUlt"]["FinalKs"] if "FinalKs" in oop else 0
+                d = s["DuoUlt"]["FinalDs"] if "FinalDs" in oop else 0
+            ufkdr = (a + c) / max(b + d,1)
+            ofkdr = 0
             if "Overall" in s:
-                res = "Name: " + s["Overall"]["name"] + ", "
-            for key in x.keys():
-                res += "{}: {}, ".format(key, x[key])
-            self.file(SE.notify, res.removesuffix(", "))
+                if "ult" in s["Overall"]:
+                    e = s["Overall"]["ult"]
+                ofkdr = s["Overall"]["FinalKs"] / max(s["Overall"]["FinalDs"],1)
+                name = s["Overall"]["name"]
+            #self.file(SE.notify, res.removesuffix(", "))
+            print("{}: UFKDR {} / OFKDR {} / ULT {}".format(name, round(ufkdr,2), round(ofkdr,2), e))
+
     def file(self, type: str, line: str):
         """Prints a line to console in the proper format
         
@@ -382,6 +398,7 @@ class MCO:
         line = line if len(line) < 150 else line[:150].strip() + " (...)"
         print(line)
 
-
 if __name__ == '__main__':
-    MCO().start()
+    mco = MCO()
+    mco.start()
+    #thread = Thread(target = mco.GUI.run(), args= ())
