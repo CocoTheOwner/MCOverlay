@@ -21,6 +21,7 @@
 - [ ] Session lock to prevent multiples
 - [ ] Chat based commands
 ## Frontend
+- [ ] Average time per game
 - [ ] GUI Layout
 - [ ] Selectable statistics in table
 	- [ ] Index score
