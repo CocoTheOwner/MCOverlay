@@ -20,6 +20,7 @@
 - [ ] Party member nicked in game
 - [ ] Session lock to prevent multiples
 - [ ] Chat based commands
+- [ ] Support for multiple API keys on one account (breaks hypixel TOS, be warned.)
 ## Frontend
 - [ ] Average time per game
 - [ ] GUI Layout
