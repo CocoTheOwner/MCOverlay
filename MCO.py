@@ -7,7 +7,6 @@ from CommandSender import CommandSender
 from StatInterpreter import getStats
 from Config import Config
 import time, traceback
-from threading import Thread
 
 defaultConfig = {
     "ownUsername": "cocodef9",
@@ -355,43 +354,8 @@ class MCO:
         # Retrieve previously retrieved statistics
         stats = self.api.stats.copy()
         self.api.stats.clear()
-        statString = ""
-        # Loop over all statistics
-        for stat in stats:
-            s = getStats(stats[stat])
-            res = ""
-            a = 0
-            b = 0
-            c = 0
-            d = 0
-            e = "UNK"
-            name = "NICKED!"
-            f = 0
-            g = 0
-            if "4sUlt" in s:
-                oop = s["4sUlt"]
-                a = s["4sUlt"]["FinalKs"] if "FinalKs" in oop else 0
-                b = s["4sUlt"]["FinalDs"] if "FinalDs" in oop else 0
-                f = s["4sUlt"]["Winstreak"] if "Winstreak" in oop else 0
-            if "DuoUlt" in s:
-                oop = s["DuoUlt"]
-                c = s["DuoUlt"]["FinalKs"] if "FinalKs" in oop else 0
-                d = s["DuoUlt"]["FinalDs"] if "FinalDs" in oop else 0
-                f += s["DuoUlt"]["Winstreak"] if "Winstreak" in oop else 0
-            ufkdr = (a + c) / max(b + d,1)
-            ofkdr = 0
-            if "Overall" in s:
-                oop = s["Overall"]
-                if "winstreak" in oop:
-                    g = oop["winstreak"]
-                if "ult" in oop:
-                    e = oop["ult"]
-                if "FinalKs" in oop and "FinalDs" in oop:
-                    ofkdr = oop["FinalKs"] / max(oop["FinalDs"],1)
-                if "name" in oop:
-                    name = oop["name"]
-            #self.file(SE.notify, res.removesuffix(", "))
-            print("{}: UWS {} / OWS {} / UFKDR {} / OFKDR {} / ULT {}".format(name, f, g, round(ufkdr,2), round(ofkdr,2), e))
+
+        # Retrieve statistics we need
 
     def file(self, type: str, line: str):
         """Prints a line to console in the proper format
@@ -411,4 +375,3 @@ class MCO:
 if __name__ == '__main__':
     mco = MCO()
     mco.start()
-    #thread = Thread(target = mco.GUI.run(), args= ())

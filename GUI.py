@@ -121,11 +121,9 @@ class GUI:
 
     def statisticsButtonClick(self):
         self.currentWindow = self.Window.statistics
-        print("Switched to statistics window")
 
     def optionsButtonClick(self):
         self.currentWindow = self.Window.options
-        print("Switched to options window")
 
     def exitButtonClick(self):
         self.app.exit()
