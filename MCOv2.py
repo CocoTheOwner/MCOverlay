@@ -1,9 +1,48 @@
 # Import and initialize the pygame library
 import pygame, os
-from pygame import Color, Rect, Surface, display, mouse, draw, cursors, event as Event
+from pygame import Color as rgba, Color, Rect, Surface, display, mouse, draw, cursors, event as Event
 from pygame.constants import *
 pygame.init()
 
+defaultWindowProperties = {
+    "size": (400, 500),
+    "minSize": (10, 20),
+    "background": rgba(0,131,45,255), # Dark green
+    "menu": {
+        "x": 0,
+        "y": 0,
+        "w": "100",
+        "h": 37.5,
+        "background": rgba(234,67,53,255), # Dark red
+        "text": rgba(0,172,71,255)  # Light green
+    },
+    "table": {
+        "x": "5",
+        "y": 56.25,
+        "w": "90",
+        "background": rgba(0,102,218,255), # Dark blue
+        "text": rgba(0,102,218,255), # Light blue
+        "headerLines": rgba(255,186,0,255), # Orang
+        "headerText": rgba(0,131,45,255), # Dark green
+        "separatorLines": rgba(255,186,0,128) # Orang with lower alpha
+    },
+    "progressBar": {
+        "x": "5",
+        "y": -35,
+        "w": "90",
+        "h": 25,
+        "outline": rgba(234,67,53,255), # Dark red
+        "bar": rgba(0,131,45,255), # Dark green
+        "barFlash": rgba(0,172,71,255), # Light green
+        "background": rgba(0,102,218,255), # Dark blue
+        "text": rgba(0,102,218,255) # Light blue
+    },
+    "filePopup": {
+        "background": rgba(0,172,71,255), # Light green
+        "text": rgba(38,132,252,255), # Light blue
+        "headerText": rgba(255,186,0,255) # Orang
+    }
+}
 class MCOv2:
 
     # Version
@@ -17,19 +56,20 @@ class MCOv2:
     # Display
     displayNumber = None
     # TODO: Add RESIZABLE here. Requires that all elements are properly scalable
-    displayTags = SRCALPHA | SHOWN
+    displayTags = SRCALPHA | SHOWN | RESIZABLE
 
     # Window
     screen = None
     running = False
-    windowBackgroundColor = None
     windowSize = None
-    windowPosition = None
-    windowIsFocused = False
-    windowHasMouse = False
-    windowIsReceivingFile = False
-    windowFullscreen = False
+    windowSizeMin = None
+    windowProperties = None
     windowVisible = True
+    windowPosition = None
+    windowHasMouse = False
+    windowIsFocused = False
+    windowFullscreen = False
+    windowIsReceivingFile = False
 
     # Buttons
     mouseButtons = [False for _ in range(0,10)]
@@ -42,26 +82,29 @@ class MCOv2:
         self,
         width = 500,
         height = 500,
-        windowPosition = (50, 50),
-        background = Color(0,131,45,255),
+        windowPosition = defaultWindowProperties["size"],
+        windowProperties = defaultWindowProperties,
         fullscreen = False,
         displayNumber = 0,
         cursor = 0,
         version = "Unknown Version"):
 
         # Store variables
+        self.windowProperties = windowProperties
         self.windowSize = (width, height)
         self.windowPosition = windowPosition
-        self.windowBackgroundColor = background
         self.displayNumber = MCOv2.testDisplayNumber(displayNumber)
         self.cursor = self.cursorOptions[cursor]
         self.version = version
 
-        # Move the window to its initial position
-        self.moveWindow(self.windowPosition)
-
         # Create the window with settings
-        self.screen = display.set_mode(size=self.windowSize, flags=self.displayTags if not fullscreen else self.displayTags | FULLSCREEN, display=self.displayNumber, depth=32, vsync=1)
+        self.screen = display.set_mode(
+            size=self.windowSize,
+            flags=self.displayTags if not fullscreen else self.displayTags | FULLSCREEN,
+            display=self.displayNumber,
+            depth=32,
+            vsync=1
+        )
 
         # Set the window title to that provided
         display.set_caption(version)
@@ -172,7 +215,10 @@ class MCOv2:
             print("Window made visible!")
             self.windowVisible = True
         elif type == WINDOWRESIZED:
-            print(dir(event))
+            x = (event.x, event.y)
+            print("Window resized from {} to {}".format(self.windowSize, x))
+            self.handleResize(x)
+            self.windowSize = x
         #else:
             #print("Unhandled event: {}".format(type))
 
@@ -180,16 +226,109 @@ class MCOv2:
         """Draws the full screen"""
 
         # Background color
-        self.screen.fill(self.windowBackgroundColor)
+        self.screen.fill(self.windowProperties["background"])
 
-        # Circle in the center for no reason
-        draw.circle(self.screen, (0, 0, 255), (250, 250), 75)
+        # Draw menu bar
+        self.makeMenu()
 
-        # Mouse muppet
-        draw.rect(self.screen, Color(10, 100, 200, 50), Rect(self.mousePos[0] - 8, self.mousePos[1] - 8, 16, 16))
+        # Draw table
+        self.makeTable()
+
+        # Draw API load
+        self.makeProgressBars()
 
         # Flip (i.e. update) the display
         display.flip()
+
+    def makeMenu(self):
+        draw.rect(
+            self.screen, 
+            self.getWindowProperty("menu", "background", False), 
+            Rect(
+                self.getWindowProperty("menu", "x"), 
+                self.getWindowProperty("menu", "y"), 
+                self.getWindowProperty("menu", "w"),
+                self.getWindowProperty("menu", "h")
+            )
+        )
+
+    def makeTable(self):
+        draw.rect(
+            self.screen, 
+            self.getWindowProperty("table", "background", False), 
+            Rect(
+                self.getWindowProperty("table", "x"), 
+                self.getWindowProperty("table", "y"), 
+                self.getWindowProperty("table", "w"),
+                self.windowSize[1] - 
+                self.getWindowProperty("menu", "h") - 
+                abs(self.getWindowProperty("progressBar", "y"))
+            )
+        )
+
+    def makeProgressBars(self):
+        draw.rect(
+            self.screen, 
+            self.getWindowProperty("progressBar", "background", False), 
+            Rect(
+                self.getWindowProperty("progressBar", "x"),
+                self.getWindowProperty("progressBar", "y"),
+                self.getWindowProperty("progressBar", "w"),
+                self.getWindowProperty("progressBar", "h"),
+            )
+        )
+
+    def getWindowProperty(self, element, subelement=None, isPosition=True, axis="x"):
+        elements = {
+            "x": "x",
+            "X": "x",
+            "y": "y",
+            "Y": "y",
+            "w": "x",
+            "W": "x",
+            "h": "y",
+            "H": "y"
+        }
+        if subelement == None:
+            if element in elements:
+                axis = elements[element]
+            if isPosition:
+                return self.makePosition(self.windowProperties[element], axis)
+            else:
+                return self.windowProperties[element]
+        else:
+            if subelement in elements:
+                axis = elements[subelement]
+            if isPosition:
+                return self.makePosition(self.windowProperties[element][subelement], axis)
+            else:
+                return self.windowProperties[element][subelement]
+
+    def makePosition(self, position, axis):
+        if axis != "x" and axis != "y":
+            raise ValueError("Invalid axis provided (must be x, X, y, Y): {}".format(axis))
+        if type(position) is float or type(position) is int:
+            if position < 0:
+                if axis == "x":
+                    position = self.windowSize[0] + position
+                else:
+                    position = self.windowSize[1] + position
+            return position
+        elif type(position) is str:
+            if position == "-7.5":
+                print(axis)
+            if axis == "x":
+                return self.xPerc(float(position))
+            else:
+                return self.yPerc(float(position))
+        else:
+            raise ValueError("Position ({}) is not string or float but: {}".format(position, type(position)))
+
+    def handleResize(self, newSize: tuple):
+        if newSize[0] < self.getWindowProperty("minSize", False)[0]:
+             or\
+            newSize[1] < self.getWindowProperty("minSize", False)[1]:
+            self.resizeWindow()
 
     def testDisplayNumber(displayNumber: int):
         """Tests if a display number is valid"""
@@ -224,12 +363,41 @@ class MCOv2:
             print("Valid log file, yeet!")
             self.logFile = path
 
+    def xPos(self, position: int):
+        """Translates position based on default window size"""
+        if position < 0:
+            position = self.windowSize[0] + position
+        return position / self.getWindowProperty("size", False)[0] * self.windowSize[0]
+
+    def yPos(self, position: int):
+        """Translates position based on default window size"""
+        if position < 0:
+            position = self.windowSize[0] + position
+        return position / self.getWindowProperty("size", False)[1] * self.windowSize[1]
+
+    def xPerc(self, percent: int):
+        if percent < -100 or percent > 100:
+            raise ValueError("Percentages range from -100 to 100")
+        """Translates position based on default window size"""
+        if percent < 0:
+            return (100+percent)/100 * self.windowSize[0]
+        else:
+            return percent/100 * self.windowSize[0]
+
+    def yPerc(self, percent: int):
+        if percent < -100 or percent > 100:
+            raise ValueError("Percentages range from -100 to 100")
+        """Translates position based on default window size"""
+        if percent < 0:
+            return (100+percent)/100 * self.windowSize[1]
+        else:
+            return percent/100 * self.windowSize[1]
+            
+        
 
 if __name__ == "__main__":
     overlay = MCOv2(
-        width=500, 
-        height=500, 
-        displayNumber=1,
         version="MCOv2 BETA 0.1",
+        displayNumber=1
     )
     overlay.start()
