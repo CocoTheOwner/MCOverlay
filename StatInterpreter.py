@@ -77,6 +77,12 @@ class Statistics:
             self.stats[key]["FK/G"] = round(get(self.stats[key],    "FinalKs") / get(self.stats[key], "Games"), self.round)
             self.stats[key]["Index"]= round(get(self.general_stats, "Stars")   * get(self.stats[key], "FKDR")**2, self.round) / 10
 
+        if "4sUlt" in self.stats.keys() and "DuoUlt" in self.stats.keys():
+            self.stats["AllUlt"] = {}
+            for key in self.stats["4sUlt"].keys():
+                if key in self.stats["DuoUlt"].keys():
+                    self.stats["AllUlt"][key] = self.stats["4sUlt"][key] + self.stats["DuoUlt"][key]
+
 if __name__=="__main__":
     s = Statistics(json.loads(open("./statistics/cocodef9.json", "r").read())["player"])
     k = DataFrame(s.stats)
