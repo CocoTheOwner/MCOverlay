@@ -4,8 +4,8 @@ from API import API
 #from GUIez import GUI
 from LogMonitor import LogMonitor
 from CommandSender import CommandSender
-from StatInterpreter import getStats
 from Config import Config
+from StatInterpreter import Statistics
 import time, traceback
 
 defaultConfig = {
@@ -354,6 +354,10 @@ class MCO:
         # Retrieve previously retrieved statistics
         stats = self.api.stats.copy()
         self.api.stats.clear()
+        for stat in stats:
+            x = Statistics(stat).stats
+            if "AllUlt" in x:
+                print(str(x["Overall"]["Name"]) + str(x["AllUlt"]))
 
         # Retrieve statistics we need
 
