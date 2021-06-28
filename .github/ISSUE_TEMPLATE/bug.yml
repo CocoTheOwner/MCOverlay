@@ -26,7 +26,7 @@ body:
     id: biome
     attributes:
       label: Biome
-      description: Which biome are you experiencing issues in? Use `/iris what biome` and send the full text here. If this is not related to a biome, ommit this.
+      description: Which biome are you experiencing issues in? Use `/iris what biome` and send the full text here. If this is not related to a biome, omit this.
       placeholder: IBiome ..... (.....)
   - type: dropdown
     id: mcversion
@@ -57,7 +57,7 @@ body:
     id: logs
     attributes:
       label: Relevant log output.
-      description: If there are no errors in the log, you may ommit this. Always use [mclogs](https://mclo.gs) to protect your IPs.
+      description: If there are no errors in the log, you may omit this. Always use [mclogs](https://mclo.gs) to protect your IPs.
       placeholder: https://mclo.gs/.......
   - type: checkboxes
     id: checksum
