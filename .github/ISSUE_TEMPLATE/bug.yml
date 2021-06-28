@@ -59,6 +59,7 @@ body:
       description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
       render: shell
   - type: checkboxes
+    id: checksum
     attributes:
       label: Checklist
       description: Please ensure you have done each of the steps here
@@ -67,5 +68,6 @@ body:
           required: true
         - label: I am using the latest version of the overworld **OR** I have made sure this issue was not already resolved on the latest version.
   - type: markdown
+    id: thanks
     attributes:
       value: "Thank you for filling out the form! We will be with you soon."
