@@ -51,7 +51,6 @@ body:
     id: checkboxes
     attributes:
       label: There is an error connected to this issue
-      multiple: true
   - type: textarea
     id: logs
     attributes:
