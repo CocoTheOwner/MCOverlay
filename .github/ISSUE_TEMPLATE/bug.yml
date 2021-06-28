@@ -14,6 +14,14 @@ body:
       placeholder: Tell us what you see!
     validations:
       required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What should happen?
+      description: Please give a text description of what you think the problem is
+      placeholder: Tell us what you want to see!
+    validations:
+      required: true
   - type: dropdown
     id: mcversion
     attributes:
@@ -39,16 +47,11 @@ body:
         - 1.4.4
     validations:
       required: true
-  - type: dropdown
-    id: browsers
+  - type: checkboxes
+    id: checkboxes
     attributes:
-      label: What browsers are you seeing the problem on?
+      label: There is an error connected to this issue
       multiple: true
-      options:
-        - Firefox
-        - Chrome
-        - Safari
-        - Microsoft Edge
   - type: textarea
     id: logs
     attributes:
@@ -56,10 +59,11 @@ body:
       description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
       render: shell
   - type: checkboxes
-    id: terms
+    id: checksum
     attributes:
-      label: Code of Conduct
-      description: By submitting this issue, you agree to follow our [Code of Conduct](https://example.com)
+      label: Checklist
+      description: Please ensure you have done each of the steps here:
       options:
-        - label: I agree to follow this project's Code of Conduct
+        - label: I am using an unmodified version of the overworld (If you modified the overworld and see the issue, contact [support](discord.gg/volmit)).
           required: true
+        - label: I am using the latest version of the overworld **OR** I have made sure this issue was not already resolved on the latest version.
