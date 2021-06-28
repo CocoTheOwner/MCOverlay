@@ -59,11 +59,13 @@ body:
       description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
       render: shell
   - type: checkboxes
-    id: checksum
     attributes:
       label: Checklist
-      description: Please ensure you have done each of the steps here:
+      description: Please ensure you have done each of the steps here
       options:
         - label: I am using an unmodified version of the overworld (If you modified the overworld and see the issue, contact [support](discord.gg/volmit)).
           required: true
         - label: I am using the latest version of the overworld **OR** I have made sure this issue was not already resolved on the latest version.
+  - type: markdown
+    attributes:
+      value: "Thank you for filling out the form! We will be with you soon."
