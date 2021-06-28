@@ -7,7 +7,7 @@ body:
       value: |
         Thank you for taking the time to fill this out!
   - type: textarea
-    id: what-happened
+    id: what
     attributes:
       label: What happened?
       description: Please give a text description of the issue
@@ -15,7 +15,7 @@ body:
     validations:
       required: true
   - type: textarea
-    id: what-happened
+    id: how
     attributes:
       label: What should happen?
       description: Please give a text description of what you think the problem is
@@ -47,10 +47,6 @@ body:
         - 1.4.4
     validations:
       required: true
-  - type: checkboxes
-    id: checkboxes
-    attributes:
-      label: There is an error connected to this issue
   - type: textarea
     id: logs
     attributes:
