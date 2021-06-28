@@ -1,7 +1,6 @@
 name: Overworld Bug Report
 description: File a bug report for the Iris Dimensions Overworld
 labels: [bug]
-title: ""
 body:
   - type: markdown
     attributes:
