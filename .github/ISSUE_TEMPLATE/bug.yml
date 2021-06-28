@@ -51,19 +51,20 @@ body:
     id: logs
     attributes:
       label: Relevant log output.
-      description: If there are no errors, you may ommit this. Always use [mclogs](https://mclo.gs) to protect your IPs.
+      description: If there are no errors in the log, you may ommit this. Always use [mclogs](https://mclo.gs) to protect your IPs.
       placeholder: https://mclo.gs/.......
   - type: checkboxes
     id: checksum
     attributes:
       label: Checklist
-      description: Please ensure you have done each of the steps here
+      description: Please ensure you meet each of the requirements below
       options:
-        - label: I am using an unmodified version of the overworld (If you modified the overworld and see the issue, contact [support](discord.gg/volmit)).
+        - label: I am using an unmodified version of the overworld. (If you modified the overworld and see an issue, contact [support](discord.gg/volmit))
           required: true
         - label: I am using [the latest version of the overworld](../) **OR** I have made sure this issue was not already resolved on the latest version.
           required: true
+        - label: I am using Spigot, Paper, Tuinity, or Purpur. (If you are not, and still think it is a valid issue, contact [support](discord.gg/volmit))
   - type: markdown
     id: thanks
     attributes:
-      value: "Thank you for filling out the form! We will be with you soon."
+      value: "Thank you for filling out the form! We will be with you soon. Please do not ask support to review your report."
