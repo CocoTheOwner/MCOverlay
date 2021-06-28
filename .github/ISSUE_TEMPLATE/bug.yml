@@ -27,7 +27,7 @@ body:
     attributes:
       label: Biome
       description: Which biome are you in? Use `/iris what biome` and send the full text here.
-      placeholder: IBiome: ..... (.....)
+      placeholder: IBiome ..... (.....)
     validations:
       required: true
   - type: dropdown
