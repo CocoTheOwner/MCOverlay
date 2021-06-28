@@ -47,12 +47,11 @@ body:
         - 1.4.4
     validations:
       required: true
-  - type: textarea
+  - type: input
     id: logs
     attributes:
-      label: Relevant log output
-      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
-      render: shell
+      label: Relevant log output. Use [mclogs](https://mclo/gs).
+      description: https://mclo.gs/...
   - type: checkboxes
     id: checksum
     attributes:
